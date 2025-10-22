@@ -153,9 +153,12 @@ $q->close();
       background:linear-gradient(180deg,#fff,#fff 70%,#fff8fc);
       color:#6b7280; text-align:center; font-weight:600;
     }
+
+    /* Sembunyikan info "soal aktif" untuk pengguna biasa */
+.role-user .qp-meta { display: none !important; }
   </style>
 </head>
-<body class="ec-body">
+<body class="ec-body <?= $isAdmin ? 'role-admin' : 'role-user' ?>">
   <header class="ec-nav">
     <div class="ec-nav-inner">
       <div class="ec-brand"><span class="ec-brand-name" style="font-weight:500;color:#6b7280;">EmoCare</span></div>
@@ -209,7 +212,9 @@ $q->close();
                   <div class="quiz-desc"><?= htmlspecialchars($q['description']) ?></div>
                 <?php endif; ?>
                 <div class="quiz-meta">
-                  <span class="chip"><?= (int)$q['active_q'] ?>/<?= (int)$q['total_q'] ?> soal aktif</span>
+                  <?php if ($isAdmin): ?>
+  <span class="chip"><?= (int)$q['active_q'] ?>/<?= (int)$q['total_q'] ?> soal aktif</span>
+<?php endif; ?>
                   <?php if ((int)$q['active_q'] > 0): ?>
                     <a class="btn" href="play_quiz.php?cat=<?= urlencode($q['slug']) ?>">Mulai Kuis</a>
                   <?php else: ?>

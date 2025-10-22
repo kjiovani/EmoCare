@@ -1,158 +1,188 @@
 <?php
+// play_quiz.php
 require_once __DIR__ . '/backend/config.php';
 require_login();
 
-$CAT_LABEL = [
-  'self_esteem' => 'Self-Esteem',
-  'social_anxiety' => 'Kecemasan Sosial'
-];
-$cat = $_GET['cat'] ?? 'self_esteem';
-if (!isset($CAT_LABEL[$cat]))
-  $cat = 'self_esteem';
+/* ============================
+   Ambil meta kuis dari slug
+============================ */
+$cat = $_GET['cat'] ?? $_POST['cat'] ?? '';
+$cat = trim($cat);
 
-$qs = [];
-// ambil 5 pertanyaan aktif terbaru di kategori ini
-$stmt = $mysqli->prepare("
-  SELECT q.id, q.question_text
-  FROM quiz_questions q
-  WHERE q.category=? AND q.is_active=1
-  ORDER BY q.id DESC
-  LIMIT 5
-");
-$stmt->bind_param('s', $cat);
-$stmt->execute();
-$res = $stmt->get_result();
-$ids = [];
-while ($row = $res->fetch_assoc()) {
-  $qs[] = $row;
-  $ids[] = (int) $row['id'];
+$QUIZ = null;
+$st = $mysqli->prepare("SELECT id, name, slug, COALESCE(description,'') AS description, is_active
+                        FROM quiz_list WHERE slug = ? LIMIT 1");
+$st->bind_param('s', $cat);
+$st->execute();
+$QUIZ = $st->get_result()->fetch_assoc();
+$st->close();
+
+if (!$QUIZ) {
+  http_response_code(404);
+  exit('Kuis tidak ditemukan.');
 }
-$stmt->close();
+$QUIZ_NAME = $QUIZ['name'];
+$CATEGORY  = $QUIZ['slug']; // dipakai untuk query pertanyaan
+
+/* ============================
+   Ambil pertanyaan aktif + opsi
+============================ */
+$qs  = [];
+$ids = [];
+
+$st = $mysqli->prepare("
+  SELECT id, question_text, COALESCE(image_path,'') AS image_path
+  FROM quiz_questions
+  WHERE category = ? AND is_active = 1
+  ORDER BY id DESC
+  LIMIT 20
+");
+$st->bind_param('s', $CATEGORY);
+$st->execute();
+$res = $st->get_result();
+while ($row = $res->fetch_assoc()) {
+  $row['id'] = (int)$row['id'];
+  $qs[]  = $row;
+  $ids[] = (int)$row['id'];
+}
+$st->close();
 
 $optmap = [];
 if ($ids) {
-  $in = implode(',', array_fill(0, count($ids), '?'));
+  $in    = implode(',', array_fill(0, count($ids), '?'));
   $types = str_repeat('i', count($ids));
-  $sql = "SELECT question_id, option_text FROM quiz_options WHERE question_id IN ($in) ORDER BY id";
+  $sql   = "SELECT question_id, option_text
+            FROM quiz_options
+            WHERE question_id IN ($in)
+            ORDER BY option_order ASC, id ASC";
   $st = $mysqli->prepare($sql);
   $st->bind_param($types, ...$ids);
   $st->execute();
   $rr = $st->get_result();
   while ($o = $rr->fetch_assoc()) {
-    $qid = (int) $o['question_id'];
+    $qid = (int)$o['question_id'];
+    if (!isset($optmap[$qid])) $optmap[$qid] = [];
     $optmap[$qid][] = $o['option_text'];
   }
   $st->close();
 }
 
-// siapkan payload JS
+/* payload ke klien */
 $payload = [];
 foreach ($qs as $q) {
-  $opts = $optmap[(int) $q['id']] ?? [];
-  // fallback aman 4 level jika admin lupa isi
-  if (count($opts) < 2)
+  $opts = $optmap[(int)$q['id']] ?? [];
+  if (count($opts) < 2) {
     $opts = ['Tidak Pernah', 'Jarang', 'Sering', 'Sangat Sering'];
-  $payload[] = ['q' => $q['question_text'], 'opts' => array_values($opts)];
+  }
+  $img = trim((string)$q['image_path']);
+  $payload[] = [
+    'id'   => (int)$q['id'],
+    'q'    => $q['question_text'],
+    'img'  => $img ? ('../' . $img) : null, // path relatif dari dokumen root
+    'opts' => array_values($opts),
+  ];
+}
+
+/* ============================
+   Submit: hitung & simpan
+============================ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'finish')) {
+  $uid = (int)($_SESSION['user']['pengguna_id'] ?? 0);
+  $catPost = trim($_POST['cat'] ?? '');
+
+  // ambil kembali slug valid (hindari manipulasi)
+  $chk = $mysqli->prepare("SELECT slug FROM quiz_list WHERE slug=? LIMIT 1");
+  $chk->bind_param('s', $catPost);
+  $chk->execute();
+  $validSlug = $chk->get_result()->fetch_column();
+  $chk->close();
+  if (!$validSlug) {
+    header('Location: home.php?err=quiz');
+    exit;
+  }
+
+  $answers = json_decode($_POST['answers'] ?? '[]', true);
+  if (!is_array($answers) || empty($answers)) {
+    header('Location: play_quiz.php?cat=' . urlencode($catPost));
+    exit;
+  }
+
+  // validasi id pertanyaan aktif
+  $validIds = [];
+  $st = $mysqli->prepare("SELECT id FROM quiz_questions WHERE category=? AND is_active=1");
+  $st->bind_param('s', $catPost);
+  $st->execute();
+  $rs = $st->get_result();
+  while ($r = $rs->fetch_assoc()) $validIds[(int)$r['id']] = true;
+  $st->close();
+
+  $sumPct = 0.0; $count = 0;
+  foreach ($answers as $a) {
+    $qid = (int)($a['id'] ?? 0);
+    $v   = (int)($a['v']  ?? 0);
+    if (!isset($validIds[$qid])) continue;
+    if ($v < 1 || $v > 4) continue;
+    $sumPct += (($v - 1) / 3) * 100.0;
+    $count++;
+  }
+  if ($count <= 0) {
+    header('Location: play_quiz.php?cat=' . urlencode($catPost));
+    exit;
+  }
+  $scorePct = round($sumPct / $count, 2);
+
+  // interpretasi
+  if     ($scorePct >= 85) { $label='Mental Sehat';  $note='Kondisi emosional stabil & adaptif. Pertahankan kebiasaan baik.'; }
+  elseif ($scorePct >= 75) { $label='Sedang';        $note='Ada tanda beban psikologis ringan—atur tidur, olahraga, dan kelola beban.'; }
+  elseif ($scorePct >= 50) { $label='Stres';         $note='Stres bermakna. Latih relaksasi/napas dalam, kurangi pemicu, minta dukungan.'; }
+  else                     { $label='Depresi Berat'; $note='Pertimbangkan konselor/psikolog. Bila ada pikiran menyakiti diri, cari bantuan darurat.'; }
+
+  // simpan attempts
+  $ins = $mysqli->prepare("INSERT INTO quiz_attempts (pengguna_id, category, score, label, notes)
+                           VALUES (?,?,?,?,?)");
+  // i s d s s  → score numeric lebih aman sebagai double/decimal
+  $ins->bind_param('isdss', $uid, $catPost, $scorePct, $label, $note);
+  $ok = $ins->execute();
+  $attemptId = (int)$ins->insert_id;
+  $ins->close();
+
+  if ($ok && $attemptId > 0) {
+    header('Location: quiz_result.php?attempt=' . $attemptId, true, 303);
+    exit;
+  }
+  header('Location: home.php?err=save');
+  exit;
 }
 ?>
 <!doctype html>
 <html lang="id">
-
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Main Kuis • <?= htmlspecialchars($CAT_LABEL[$cat]) ?></title>
-  <link rel="stylesheet" href="css/admin.css">
+  <title>Main Kuis • <?= htmlspecialchars($QUIZ_NAME) ?></title>
+  <link rel="stylesheet" href="css/admin.css" />
   <style>
-    .panel {
-      max-width: 760px;
-      margin: 24px auto;
-      padding: 16px;
-      border-radius: 18px;
-      background: #fff;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, .05), inset 0 1px 0 rgba(255, 255, 255, .6);
-    }
-
-    .title {
-      font-weight: 700;
-      margin: 0 0 8px;
-    }
-
-    .muted {
-      color: #6b7280
-    }
-
-    .qtext {
-      font-weight: 600;
-      margin: 12px 0
-    }
-
-    .opts label {
-      display: block;
-      padding: 10px 12px;
-      border: 1px solid #f1b9cd;
-      border-radius: 12px;
-      margin: 8px 0
-    }
-
-    .opts input {
-      margin-right: 8px
-    }
-
-    .progress {
-      height: 8px;
-      background: #fde2ea;
-      border-radius: 999px;
-      overflow: hidden;
-      margin: 8px 0 16px
-    }
-
-    .bar {
-      height: 100%;
-      width: 4%;
-      background: #f59ab5
-    }
-
-    .center {
-      display: flex;
-      gap: 8px;
-      align-items: center
-    }
-
-    .result {
-      background: linear-gradient(180deg, #fff0f6, #fff);
-      border: 1px solid #f6c3d3;
-      border-radius: 16px;
-      padding: 14px;
-      margin-top: 12px
-    }
-
-    .score {
-      font-size: 28px;
-      font-weight: 800
-    }
-
-    .tag {
-      padding: 4px 10px;
-      border: 1px solid #f1b9cd;
-      border-radius: 999px;
-      font-weight: 600
-    }
+    .panel{max-width:760px;margin:24px auto;padding:16px;border-radius:18px;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.6)}
+    .title{font-weight:700;margin:0 0 8px}
+    .muted{color:#6b7280}
+    .qtext{font-weight:600;margin:12px 0}
+    .qimg{margin:8px 0 10px}
+    .qimg img{max-width:100%;border-radius:12px;border:1px solid #f1b9cd}
+    .opts label{display:block;padding:10px 12px;border:1px solid #f1b9cd;border-radius:12px;margin:8px 0}
+    .opts input{margin-right:8px}
+    .progress{height:8px;background:#fde2ea;border-radius:999px;overflow:hidden;margin:8px 0 16px}
+    .bar{height:100%;width:4%;background:#f59ab5}
+    .center{display:flex;gap:8px;align-items:center}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
   </style>
 </head>
-
 <body>
   <div class="panel">
-    <h2 class="title"><?= htmlspecialchars($CAT_LABEL[$cat]) ?></h2>
+    <h2 class="title"><?= htmlspecialchars($QUIZ_NAME) ?></h2>
     <div class="muted">Tes psikologi — tidak ada jawaban benar/salah. Pilih yang paling menggambarkan dirimu.</div>
 
-    <div class="progress">
-      <div id="bar" class="bar"></div>
-    </div>
-
-    <div id="qwrap">
-      <!-- konten pertanyaan diisi JS -->
-    </div>
+    <div class="progress"><div id="bar" class="bar"></div></div>
+    <div id="qwrap"></div>
 
     <div class="center" style="margin-top:12px">
       <button id="prev" class="btn ghost" type="button">Sebelumnya</button>
@@ -160,102 +190,89 @@ foreach ($qs as $q) {
       <button id="done" class="btn" type="button" hidden>Selesai</button>
       <a href="home.php" class="btn ghost">Kembali</a>
     </div>
-
-    <div id="result" class="result" hidden>
-      <div><span class="score"><span id="pct">0</span>%</span></div>
-      <div style="margin-top:6px"><span id="label" class="tag">-</span></div>
-      <div id="note" class="muted" style="margin-top:8px"></div>
-    </div>
   </div>
+
+  <!-- form submit akhir -->
+  <form id="finishForm" method="post" action="play_quiz.php" style="display:none">
+    <input type="hidden" name="action" value="finish">
+    <input type="hidden" name="cat" value="<?= htmlspecialchars($CATEGORY) ?>">
+    <input type="hidden" name="answers" id="answersField">
+  </form>
 
   <script>
     const DATA = <?= json_encode($payload, JSON_UNESCAPED_UNICODE) ?>;
-    const N = DATA.length;
-    const bar = document.getElementById('bar');
+    const N    = DATA.length;
+
+    const bar  = document.getElementById('bar');
     const wrap = document.getElementById('qwrap');
     const prev = document.getElementById('prev');
     const next = document.getElementById('next');
     const done = document.getElementById('done');
-    const resBox = document.getElementById('result');
-    const pctEl = document.getElementById('pct');
-    const lblEl = document.getElementById('label');
-    const noteEl = document.getElementById('note');
 
     let idx = 0;
-    let answers = new Array(N).fill(null); // 1..4
+    // simpan jawaban dalam {id, v}
+    let answers = DATA.map(q => ({ id: q.id, v: null }));
 
-    function render() {
-      if (N === 0) {
+    function render(){
+      if (N === 0){
         wrap.innerHTML = '<div class="muted">Belum ada pertanyaan aktif.</div>';
         prev.disabled = next.disabled = done.disabled = true;
         return;
       }
       const q = DATA[idx];
-      const labels = q.opts.length ? q.opts : ['Tidak Pernah', 'Jarang', 'Sering', 'Sangat Sering'];
-      const opts = labels.map((t, i) => `
-    <label><input type="radio" name="opt" value="${i + 1}">${t}</label>
-  `).join('');
-      wrap.innerHTML = `
-    <div class="muted">Pertanyaan</div>
-    <div class="qtext">${idx + 1}. ${q.q}</div>
-    <div class="opts">${opts}</div>
-  `;
-      // restore
-      if (answers[idx] != null) {
-        const el = wrap.querySelector(`input[value="${answers[idx]}"]`); if (el) el.checked = true;
+      const labels = (q.opts && q.opts.length) ? q.opts : ['Tidak Pernah','Jarang','Sering','Sangat Sering'];
+
+      let imgHtml = '';
+      if (q.img){
+        imgHtml = `<div class="qimg"><img src="${q.img}" alt="Gambar pertanyaan"></div>`;
       }
-      // progress
-      bar.style.width = Math.max(4, (idx / N) * 100) + '%';
-      // nav
+
+      wrap.innerHTML = `
+        <div class="muted">Pertanyaan</div>
+        <div class="qtext">${idx+1}. ${q.q}</div>
+        ${imgHtml}
+        <div class="opts">
+          ${labels.map((t,i)=>`
+            <label><input type="radio" name="opt" value="${i+1}"> ${t}</label>
+          `).join('')}
+        </div>
+      `;
+
+      // restore pilihan
+      const v = answers[idx].v;
+      if (v != null){
+        const el = wrap.querySelector('input[name="opt"][value="' + v + '"]');
+        if (el) el.checked = true;
+      }
+
+      // progres & tombol
+      bar.style.width = (N === 1 ? 100 : Math.max(4, (idx/(N-1))*100)) + '%';
       prev.disabled = (idx === 0);
-      next.hidden = (idx === N - 1);
-      done.hidden = (idx !== N - 1);
-      resBox.hidden = true;
+      next.hidden   = (idx === N - 1);
+      done.hidden   = (idx !== N - 1);
     }
 
-    function readSel() {
+    function readSel(){
       const c = wrap.querySelector('input[name="opt"]:checked');
       return c ? parseInt(c.value, 10) : null;
     }
 
-    function calcPercent() {
-      // map 1..4 -> 0, 33, 66, 100 lalu rata-rata
-      let sum = 0;
-      for (const v of answers) {
-        const x = (v - 1) * (100 / 3); // 0..100
-        sum += x;
-      }
-      return Math.round(sum / answers.length);
-    }
-
-    function interpret(p) {
-      // 100-85 sehat; 85-75 sedang; 75-50 stres; 50-0 depresi berat
-      if (p >= 85) return ['Mental Sehat', 'Kondisi emosional stabil & adaptif. Pertahankan kebiasaan baik.'];
-      if (p >= 75) return ['Sedang', 'Ada tanda beban psikologis ringan—coba atur tidur, olahraga, dan kelola beban.'];
-      if (p >= 50) return ['Stres', 'Stres terasa bermakna. Latih relaksasi/napas dalam, kurangi pemicu, dan minta dukungan.'];
-      return ['Depresi Berat', 'Pertimbangkan berbicara dengan konselor/psikolog. Bila ada pikiran menyakiti diri, segera hubungi layanan darurat.'];
-    }
-
     prev.onclick = () => { idx = Math.max(0, idx - 1); render(); };
     next.onclick = () => {
-      const v = readSel(); if (v == null) return; // no alert benar/salah
-      answers[idx] = v; idx++; render();
+      const v = readSel(); if (v == null) return;
+      answers[idx].v = v;
+      idx = Math.min(N - 1, idx + 1);
+      render();
     };
     done.onclick = () => {
       const v = readSel(); if (v == null) return;
-      answers[idx] = v;
-      if (answers.some(x => x == null)) return; // masih ada yang kosong—diamkan saja
-      const p = calcPercent();
-      const [lbl, note] = interpret(p);
-      pctEl.textContent = p;
-      lblEl.textContent = lbl;
-      noteEl.textContent = note;
-      resBox.hidden = false;
-      bar.style.width = '100%';
+      answers[idx].v = v;
+      if (answers.some(a => a.v == null)) return;
+      document.getElementById('answersField').value = JSON.stringify(answers);
+      document.getElementById('finishForm').submit();
     };
 
     render();
   </script>
 </body>
-
 </html>
