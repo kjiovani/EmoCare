@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daftar • EmoCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .bg-hero {
+      background: linear-gradient(135deg, #ffe0ea 0%, #e7dcff 50%, #dfe9ff 100%);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-hero flex items-center justify-center px-4">
+  <div class="w-full max-w-md bg-white/90 rounded-2xl shadow-xl p-6 border border-white/60">
+    <h1 class="text-2xl font-bold text-center mb-6">Buat Akun <span
+        class="bg-gradient-to-r from-pink-500 to-indigo-500 bg-clip-text text-transparent">EmoCare</span></h1>
+    <form action="/backend/auth_register.php" method="post" id="registerForm" class="space-y-4">
+      <div>
+        <label class="label" for="username">Username</label>
+        <input id="username" name="username" type="text" placeholder="Minimal 8 huruf" class="input" required />
+      </div>
+      <div>
+        <label class="label" for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="Gunakan email @gmail.com" class="input" required />
+      </div>
+      <div>
+        <label class="label" for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="Minimal 8 + simbol" class="input" required />
+      </div>
+      <button class="btn-primary w-full" type="submit">Daftar</button>
+    </form>
+    <p class="mt-4 text-sm text-center">Sudah punya akun? <a href="login.html"
+        class="text-pink-600 font-medium">Masuk</a></p>
+  </div>
+  <!-- Script selalu di paling bawah -->
+
+  <!-- <script src="js/auth.js"></script> -->
+</body>
+
+</html>

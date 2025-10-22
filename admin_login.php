@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Masuk • EmoCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .bg-hero {
+      background: linear-gradient(135deg, #ffe0ea 0%, #e7dcff 50%, #dfe9ff 100%);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-hero flex items-center justify-center px-4">
+  <div class="w-full max-w-md bg-white/90 rounded-2xl shadow-xl p-6 border border-white/60">
+    <h1 class="text-2xl font-bold text-center mb-6">Khusus <span style="color:#ec4899">Admin</span></h1>
+    <form action="/backend/auth_login.php" method="POST" class="space-y-4">
+      <div>
+        <label class="label" for="identity">Email atau Username</label>
+        <input id="identity" name="identity" type="text" class="input" required />
+      </div>
+      <div>
+        <label class="label" for="password">Password</label>
+        <input id="password" name="password" type="password" class="input" required />
+      </div>
+      <button class="btn-primary w-full" type="submit">Masuk</button>
+    </form>
+    <p class="mt-4 text-sm text-center">Belum punya akun? <a href="register.html"
+        class="text-pink-600 font-medium">Daftar sekarang</a></p>
+    <p class="mt-2 text-sm text-center"><a href="index.html" class="text-indigo-600">← Kembali ke halaman utama</a></p>
+  </div>
+  <!-- Script selalu di paling bawah -->
+
+  <!-- <script src="js/auth.js"></script> -->
+</body>
+
+</html>

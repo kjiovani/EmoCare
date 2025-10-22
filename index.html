@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EmoCare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .bg-hero {
+      background: linear-gradient(135deg, #ffe0ea 0%, #e7dcff 50%, #dfe9ff 100%);
+    }
+
+    .bg-band {
+      background: linear-gradient(90deg, #ff3b8a 0%, #9b5cff 50%, #3ba0ff 100%);
+    }
+
+    .card-fitur {
+      background: white;
+      border-radius: 1.25rem;
+      padding: 1.5rem;
+      border: 1px solid rgba(0, 0, 0, .06);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, .06)
+    }
+
+    .border-pink-soft {
+      border-color: #ffd3e4
+    }
+
+    .border-blue-soft {
+      border-color: #cfe5ff
+    }
+
+    .border-purple-soft {
+      border-color: #ead8ff
+    }
+
+    .border-orange-soft {
+      border-color: #ffe2c6
+    }
+
+    .nav-link {
+      padding: .5rem .75rem;
+      border-radius: .75rem
+    }
+
+    .nav-link:hover {
+      background: rgba(0, 0, 0, .04)
+    }
+  </style>
+</head>
+
+<body class="min-h-screen text-gray-900">
+  <!-- NAV -->
+  <header class="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <img src="assets/heart.png" alt="EmoCare Logo" class="w-10 h-10 rounded" />
+      <span class="font-bold text-xl">EmoCare</span>
+    </div>
+    <nav class="flex items-center gap-1 sm:gap-3">
+      <a href="#fitur" class="nav-link">Fitur</a>
+      <a href="#angka" class="nav-link">Angka</a>
+      <a href="#testimoni" class="nav-link">Testimoni</a>
+      <a href="#footer" class="nav-link">Kontak</a>
+      <a class="px-4 py-2 rounded-xl bg-white/80 shadow hover:shadow-md transition ml-1" href="login.html">Masuk</a>
+      <a class="px-4 py-2 rounded-xl bg-pink-600 text-white shadow hover:shadow-md transition"
+        href="register.html">Daftar</a>
+      <a class="btn btn-admin" href="admin_login.php">Admin</a>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section class="bg-hero pt-12 pb-16">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <div class="mx-auto w-24 h-24 px-16 py-6 mb-6">
+        <img src="assets/heart.png" alt="EmoCare" class="max-w-2xl h-24 rounded" />
+      </div>
+      <h1 class="text-4xl md:text-6xl font-extrabold leading-tight">
+        Selamat Datang di <span class="bg-gradient-to-r from-pink-500 to-indigo-500 bg-clip-text">EmoCare</span>
+      </h1>
+      <p class="mt-4 text-lg md:text-xl text-gray-700 max-w-2xl mx-auto">
+        Platform digital yang sederhana dan mudah digunakan untuk remaja dan pelajar Indonesia
+        dalam mengelola kondisi emosional mereka secara berkelanjutan.
+      </p>
+      <div class="mt-8 flex items-center justify-center gap-3"><a href="dashboard.html" class="btn-primary">Mulai Gratis
+          Sekarang</a><a href="login.html" class="px-4 py-2 rounded-xl bg-white shadow hover:shadow-md transition">Sudah
+          Punya Akun? Masuk</a></div>
+      <div class="mt-6">
+      </div>
+    </div>
+  </section>
+
+  <!-- FITUR UNGGULAN -->
+  <section id="fitur" class="scroll-sec max-w-6xl mx-auto px-6 py-16">
+    <h2 class="text-4xl font-extrabold text-center">Fitur Unggulan EmoCare</h2>
+    <p class="text-gray-600 text-center mt-2">Solusi lengkap untuk kesehatan mental remaja</p>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
+      <div class="card-fitur border border-blue-soft text-center">
+        <img src="assets/journal.png" class="mx-auto mb-3 w-24" alt="Mood">
+        <h3 class="text-pink-600 font-semibold">Mood Tracker</h3>
+        <p class="text-sm text-gray-600">Catat dan pantau suasana hati harian Anda</p>
+        <p class="text-sm text-gray-700 mt-3">Sistem pencatatan mood yang mudah dengan visualisasi data menarik untuk
+          memahami pola emosi.</p>
+      </div>
+      <div class="card-fitur border border-blue-soft text-center">
+        <img src="assets/journal.png" class="mx-auto mb-3 w-24" alt="Jurnal">
+        <h3 class="text-blue-600 font-semibold">Jurnal Harian</h3>
+        <p class="text-sm text-gray-600">Ekspresikan diri melalui tulisan pribadi</p>
+        <p class="text-sm text-gray-700 mt-3">Ruang aman untuk menulis jurnal sebagai eksplorasi diri dan refleksi
+          emosional.</p>
+      </div>
+      <div class="card-fitur border border-purple-soft text-center">
+        <img src="assets/journal.png" class="mx-auto mb-3 w-24" alt="Pengingat">
+        <h3 class="text-purple-600 font-semibold">Pengingat Self‑Care</h3>
+        <p class="text-sm text-gray-600">Jaga kesehatan mental dengan reminder</p>
+        <p class="text-sm text-gray-700 mt-3">Pengingat fleksibel untuk aktivitas self‑care dan rutinitas kesehatan.</p>
+      </div>
+      <div class="card-fitur border border-orange-soft text-center">
+        <img src="assets/journal.png" class="mx-auto mb-3 w-24" alt="Kuis">
+        <h3 class="text-orange-600 font-semibold">Kuis Psikologi</h3>
+        <p class="text-sm text-gray-600">Kenali kondisi emosional dengan kuis</p>
+        <p class="text-sm text-gray-700 mt-3">Kuis sederhana untuk membantu memahami dan mengenali kondisi emosional
+          diri.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATISTIC BAND -->
+  <section id="angka" class="scroll-sec bg-hero py-16">
+    <div class="max-w-6xl mx-auto px-6">
+      <h2 class="text-4xl font-extrabold text-center">EmoCare dalam Angka</h2>
+      <p class="text-gray-600 text-center mt-2">Dampak positif yang telah kami ciptakan</p>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
+        <div class="card text-center">
+          <div
+            class="text-3xl font-extrabold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+            1,200+</div>
+          <div class="font-semibold mt-1">Pengguna Aktif</div>
+          <div class="text-sm text-gray-600">Remaja yang telah bergabung</div>
+        </div>
+        <div class="card text-center">
+          <div
+            class="text-3xl font-extrabold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+            15,000+</div>
+          <div class="font-semibold mt-1">Mood Tercatat</div>
+          <div class="text-sm text-gray-600">Catatan mood harian</div>
+        </div>
+        <div class="card text-center">
+          <div
+            class="text-3xl font-extrabold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+            8,500+</div>
+          <div class="font-semibold mt-1">Jurnal Ditulis</div>
+          <div class="text-sm text-gray-600">Jurnal pribadi tersimpan</div>
+        </div>
+        <div class="card text-center">
+          <div
+            class="text-3xl font-extrabold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+            3,200+</div>
+          <div class="font-semibold mt-1">Kuis Selesai</div>
+          <div class="text-sm text-gray-600">Kuis psikologi dikerjakan</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONI -->
+  <section id="testimoni" class="scroll-sec max-w-6xl mx-auto px-6 py-16">
+    <h2 class="text-4xl font-extrabold text-center">Apa Kata Pengguna Kami</h2>
+    <p class="text-gray-600 text-center mt-2">Testimoni dari remaja yang telah merasakan manfaat EmoCare</p>
+    <div class="grid md:grid-cols-3 gap-6 mt-10">
+      <div class="card">
+        <div class="font-semibold">Sari Dewi</div>
+        <div class="text-sm text-gray-500">Siswa SMA</div>
+        <div class="mt-2">⭐⭐⭐⭐⭐</div>
+        <p class="italic text-gray-700 mt-3">"EmoCare membantu saya lebih memahami perasaan sendiri. Fitur mood
+          tracker‑nya sangat mudah digunakan!"</p>
+      </div>
+      <div class="card">
+        <div class="font-semibold">Ahmad Rizki</div>
+        <div class="text-sm text-gray-500">Mahasiswa</div>
+        <div class="mt-2">⭐⭐⭐⭐⭐</div>
+        <p class="italic text-gray-700 mt-3">"Jurnal harian di EmoCare jadi tempat curhat terbaik. Privacy terjaga dan
+          interface‑nya cantik!"</p>
+      </div>
+      <div class="card">
+        <div class="font-semibold">Maya Putri</div>
+        <div class="text-sm text-gray-500">Siswa SMK</div>
+        <div class="mt-2">⭐⭐⭐⭐⭐</div>
+        <p class="italic text-gray-700 mt-3">"Kuis psikologi sederhana tapi insightful. Reminder self‑care‑nya juga
+          membantu banget!"</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BAND -->
+  <section id="cta" class="scroll-sec bg-hero py-16 text-white text-center">
+    <div class="max-w-3xl mx-auto px-6">
+      <h2 class="text-2xl md:text-4xl font-extrabold text-black">Siap Memulai Perjalanan Kesehatan Mental Anda?</h2>
+      <p class="opacity-90 mt-2">Bergabunglah dengan ribuan remaja Indonesia yang telah merasakan manfaat EmoCare untuk
+        kesehatan mental yang lebih baik.</p>
+      <a href="register.html" class="inline-block mt-6 px-6 py-3 rounded-xl bg-white text-pink-600 font-semibold">Mulai
+        Gratis Sekarang</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer id="footer" class="bg-gray-900 text-gray-200">
+    <div class="max-w-6xl mx-auto px-6 py-12 grid md:grid-cols-4 gap-8">
+      <div>
+        <div class="text-pink-400 font-bold text-xl">EmoCare</div>
+        <p class="text-gray-400 mt-2">Platform digital untuk kesehatan mental remaja Indonesia</p>
+      </div>
+      <div>
+        <div class="font-semibold mb-2">Fitur</div>
+        <ul class="space-y-1 text-gray-400">
+          <li>Mood Tracker</li>
+          <li>Jurnal Harian</li>
+          <li>Pengingat Self‑Care</li>
+          <li>Kuis Psikologi</li>
+        </ul>
+      </div>
+      <div>
+        <div class="font-semibold mb-2">Dukungan</div>
+        <ul class="space-y-1 text-gray-400">
+          <li>Bantuan</li>
+          <li>FAQ</li>
+          <li>Kontak Kami</li>
+          <li>Privacy Policy</li>
+        </ul>
+      </div>
+      <div>
+        <div class="font-semibold mb-2">Kontak</div>
+        <ul class="space-y-1 text-gray-400">
+          <li>Email: info@emocare.id</li>
+          <li>WhatsApp: +62 812‑3456‑7890</li>
+          <li>Instagram: @emocare.official</li>
+        </ul>
+      </div>
+    </div>
+    <div class="border-t border-gray-800 py-6 text-center text-gray-400">© 2024 EmoCare. Dibuat dengan ❤️ untuk
+      kesehatan mental remaja Indonesia.</div>
+  </footer>
+
+  <!-- (Optional) fallback smooth scroll for old browsers -->
+  <script>
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        const id = a.getAttribute('href');
+        if (id.length > 1) {
+          const t = document.querySelector(id);
+          if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

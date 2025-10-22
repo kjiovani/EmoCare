@@ -1,0 +1,498 @@
+/* ==== Global font: Roboto ==== */
+:root {
+  --font-sans: "Roboto", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+html,
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Pastikan elemen form & tombol ikut font global */
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+
+/* ========== Admin Pink Theme (EmoCare) ========== */
+:root {
+  --pink: #f472b6;
+  /* pink utama */
+  --pink-200: #fce7f3;
+  --pink-300: #f9a8d4;
+  --pink-700: #be185d;
+  --bg: #fff1f7;
+  /* latar lembut */
+  --card: #ffffff;
+  --muted: #6b7280;
+  --bd: #f3d1e1;
+}
+
+body[data-page="admin"] {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Poppins', sans-serif;
+  background: var(--bg);
+  color: #111827;
+  margin: 0;
+}
+
+.wrap {
+  max-width: 1100px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+.hdr {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.hdr h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.right {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.small {
+  font-size: 12px;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media(min-width:900px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Kartu */
+.card {
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(244, 114, 182, .15);
+}
+
+.card .hd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--bd);
+  background: linear-gradient(180deg, var(--pink-200), #fff);
+}
+
+.card .hd h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.card .bd {
+  padding: 16px;
+}
+
+/* Tabel */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid var(--bd);
+  padding: 8px 10px;
+  font-size: 14px;
+  text-align: left;
+}
+
+th {
+  background: var(--pink-200);
+  font-weight: 700;
+}
+
+/* Tombol & input */
+.btn {
+  background: var(--pink);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.btn.ghost {
+  background: #fff;
+  color: var(--pink-700);
+  border: 1px solid var(--pink-300);
+}
+
+.inp,
+textarea,
+select {
+  width: 100%;
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media(min-width:640px) {
+  .row-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Notifikasi */
+.ok {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.warn {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+/* Tag/label */
+.tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--bd);
+  background: #fff;
+}
+
+.tag.active {
+  background: var(--pink-200);
+  border-color: var(--pink-300);
+}
+
+/* ==== Perapihan global ===== */
+* {
+  box-sizing: border-box;
+}
+
+/* Kartu utama */
+.card {
+  background: #fff;
+  border: 1px solid var(--bd, #f3d1e1);
+  border-radius: 16px;
+  /* sudut tumpul */
+  box-shadow: 0 6px 24px rgba(244, 114, 182, .12);
+  overflow: hidden;
+  /* header/tabel ikut membulat */
+  margin-bottom: 16px;
+}
+
+/* Header kartu */
+.card .hd {
+  padding: 14px 18px;
+  background: linear-gradient(180deg, var(--pink-200, #fce7f3), #fff);
+  border-bottom: 1px solid var(--bd, #f3d1e1);
+}
+
+/* Isi kartu: beri gutter kanan-kiri */
+.card .bd {
+  padding: 18px 22px;
+  /* <-- tambah padding kiri/kanan */
+}
+
+/* Form grid agar tidak nabrak & sudut input membulat */
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.row.row-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.row>label {
+  display: block;
+  min-width: 0;
+}
+
+/* penting: cegah overflow */
+.inp,
+textarea,
+select {
+  width: 100%;
+  border: 1px solid var(--bd, #f3d1e1);
+  border-radius: 12px;
+  /* sudut tumpul input */
+  padding: 10px 12px;
+  font-size: 14px;
+  background: #fff;
+}
+
+textarea.inp,
+textarea {
+  resize: vertical;
+}
+
+/* Tombol & badge */
+.btn {
+  border-radius: 999px;
+}
+
+.tag {
+  border-radius: 999px;
+}
+
+/* Tabel agar membulat rapi dan tidak nabrak tepi */
+.table-responsive {
+  overflow: hidden;
+  /* clip sudut tabel */
+  border: 1px solid var(--bd, #f3d1e1);
+  border-radius: 12px;
+  /* sudut tumpul pembungkus tabel */
+  background: #fff;
+}
+
+.ec-table {
+  width: 100%;
+  border-collapse: separate;
+  /* agar radius muncul */
+  border-spacing: 0;
+  /* hilangkan celah */
+}
+
+.ec-table th,
+.ec-table td {
+  padding: 10px 12px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--bd, #f3d1e1);
+  border-right: 1px solid var(--bd, #f3d1e1);
+}
+
+.ec-table th {
+  background: var(--pink-100, #ffe4f1);
+}
+
+/* hapus garis kanan terakhir & bawah terakhir agar tepi halus */
+.ec-table tr>*:last-child {
+  border-right: none;
+}
+
+.ec-table tbody tr:last-child>* {
+  border-bottom: none;
+}
+
+/* Header halaman & tombol kanan agar sejajar */
+.hdr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hdr .right {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+}
+
+/* Lebar halaman (biar ada napas kiri-kanan tapi tidak “meletak”) */
+.wrap {
+  max-width: 1200px;
+  margin: 24px auto;
+  padding: 0 20px;
+}
+
+/* Responsive kecil */
+@media (max-width: 640px) {
+  .row.row-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .card .bd {
+    padding: 14px;
+  }
+}
+
+/* ====== Kuis Terbaru: tampilan tabel rapi ====== */
+
+/* Buat kartu tabel tampak “menyatu” & sudut tumpul */
+.ec-table.quiz-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  /* sudut tumpul tabel */
+}
+
+/* Hilangkan garis vertikal yang tebal, rapikan header */
+.ec-table.quiz-table th,
+.ec-table.quiz-table td {
+  border-left: none;
+  border-right: none;
+  padding: 12px 14px;
+  /* sedikit lebih lega */
+}
+
+/* Header lebih jelas seperti contoh */
+.ec-table.quiz-table thead th {
+  background: var(--pink-100);
+  font-weight: 700;
+  border-bottom: 2px solid var(--bd);
+}
+
+/* Garis antar baris tipis, dan hover lembut */
+.ec-table.quiz-table tbody tr {
+  border-top: 1px solid var(--bd);
+}
+
+.ec-table.quiz-table tbody tr:hover {
+  background: #fff7fb;
+}
+
+/* Perataan & lebar kolom seperti contoh */
+.ec-table.quiz-table th:nth-child(1),
+.ec-table.quiz-table td:nth-child(1) {
+  width: 72px;
+  text-align: center;
+}
+
+.ec-table.quiz-table th:nth-child(3),
+.ec-table.quiz-table td:nth-child(3) {
+  width: 110px;
+  text-align: center;
+}
+
+.ec-table.quiz-table th:nth-child(4),
+.ec-table.quiz-table td:nth-child(4) {
+  width: 190px;
+}
+
+.ec-table.quiz-table th:nth-child(5),
+.ec-table.quiz-table td:nth-child(5) {
+  width: 220px;
+  white-space: nowrap;
+}
+
+/* Kelompok tombol aksi rapi satu baris */
+.ec-table .actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Teks pertanyaan: maksimum 2 baris, sisanya ellipsis */
+.qtext {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  max-width: 100%;
+}
+
+/* Badge status agar konsisten */
+.tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--bd);
+  background: #fff;
+}
+
+.tag.active {
+  background: var(--pink-200);
+  border-color: var(--pink-300);
+}
+
+/* Sudut tumpul untuk container kartu (biar menyatu) */
+.card {
+  border-radius: 18px;
+}
+
+.card .bd {
+  border-radius: 0 0 18px 18px;
+}
+
+/* ====== Kolom Aksi: tombol sejajar satu baris ====== */
+
+/* Jadikan sel Aksi sebagai flex container */
+.ec-table .actions {
+  display: flex;
+  /* susun horizontal */
+  align-items: center;
+  /* rata tengah vertikal */
+  justify-content: flex-end;
+  /* mepet ke kanan */
+  gap: 10px;
+  /* jarak antar tombol */
+  flex-wrap: nowrap;
+  /* JANGAN turun baris */
+  white-space: nowrap;
+  /* cegah tombol terpotong ke baris bawah */
+  padding-right: 16px;
+  /* sedikit ruang kanan */
+}
+
+/* Pastikan <form> di dalam sel tidak mengubah layout */
+.ec-table .actions form {
+  margin: 0;
+  display: contents;
+  /* biar <button> di dalamnya jadi item flex langsung */
+}
+
+/* Tombol tidak pecah baris */
+.ec-table .actions .btn {
+  white-space: nowrap;
+}
+
+/* Lebarkan kolom Aksi agar muat 3 tombol */
+.ec-table.quiz-table th:nth-child(5),
+.ec-table.quiz-table td:nth-child(5) {
+  width: 280px;
+  /* naikkan jika masih sempit: 300–320px */
+}
