@@ -715,144 +715,250 @@ include __DIR__ . '/_head.php';
 </style>
 
 <style>
-/* ===== Pretty Alerts (Aesthetic Pink) ===== */
-.alerts{position:relative;display:flex;flex-direction:column;gap:10px;margin:8px 0 16px}
+    /* ===== Pretty Alerts (Aesthetic Pink) ===== */
+    .alerts {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin: 8px 0 16px
+    }
 
-.alert{
-  display:flex; align-items:flex-start; gap:12px;
-  padding:12px 14px; border:1px solid var(--bd); border-radius:14px;
-  background:linear-gradient(180deg,#fff,#fff 70%,#fff8fc);
-  box-shadow:0 10px 24px rgba(236,72,153,.08);
-  color:#374151; line-height:1.45; position:relative;
-  transform:translateY(-4px); opacity:0; animation:alert-in .28s ease forwards;
-}
-@keyframes alert-in{to{transform:translateY(0);opacity:1}}
-.alert .ico{
-  width:36px; height:36px; border-radius:12px; flex:0 0 36px;
-  display:grid; place-items:center; border:1px solid #f7cfe0; background:#fff;
-  box-shadow:0 6px 14px rgba(236,72,153,.06);
-}
-.alert .txt{flex:1}
-.alert .ttl{font-weight:900; letter-spacing:.01em; margin-bottom:2px}
-.alert .msg{margin:0}
-.alert .close{
-  appearance:none; border:0; background:#fff; color:#9ca3af;
-  border:1px solid var(--bd); width:32px;height:32px;border-radius:10px;
-  display:grid;place-items:center; cursor:pointer;
-}
-.alert .close:hover{filter:brightness(.98)}
-.alert.success{border-color:#c7f2d4;background:linear-gradient(180deg,#fff,#fff 70%,#f3fff7)}
-.alert.success .ico{border-color:#d9f7e4}
-.alert.warn{border-color:#fde9c3;background:linear-gradient(180deg,#fff,#fff 70%,#fff9ef)}
-.alert.warn .ico{border-color:#fee7c9}
-.alert.info{border-color:#dbeafe;background:linear-gradient(180deg,#fff,#fff 70%,#f5faff)}
-.alert.info .ico{border-color:#dbeafe}
-.alert.danger{border-color:#fed7df;background:linear-gradient(180deg,#fff,#fff 70%,#fff1f4)}
-.alert.danger .ico{border-color:#fed7df}
+    .alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 1px solid var(--bd);
+        border-radius: 14px;
+        background: linear-gradient(180deg, #fff, #fff 70%, #fff8fc);
+        box-shadow: 0 10px 24px rgba(236, 72, 153, .08);
+        color: #374151;
+        line-height: 1.45;
+        position: relative;
+        transform: translateY(-4px);
+        opacity: 0;
+        animation: alert-in .28s ease forwards;
+    }
 
-/* pill action on alert (optional) */
-.alert .actions{display:flex;gap:8px;margin-top:6px}
-.alert .pill{height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--bd);background:#ffe7f2;font-weight:800}
+    @keyframes alert-in {
+        to {
+            transform: translateY(0);
+            opacity: 1
+        }
+    }
+
+    .alert .ico {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        flex: 0 0 36px;
+        display: grid;
+        place-items: center;
+        border: 1px solid #f7cfe0;
+        background: #fff;
+        box-shadow: 0 6px 14px rgba(236, 72, 153, .06);
+    }
+
+    .alert .txt {
+        flex: 1
+    }
+
+    .alert .ttl {
+        font-weight: 900;
+        letter-spacing: .01em;
+        margin-bottom: 2px
+    }
+
+    .alert .msg {
+        margin: 0
+    }
+
+    .alert .close {
+        appearance: none;
+        border: 0;
+        background: #fff;
+        color: #9ca3af;
+        border: 1px solid var(--bd);
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+    }
+
+    .alert .close:hover {
+        filter: brightness(.98)
+    }
+
+    .alert.success {
+        border-color: #c7f2d4;
+        background: linear-gradient(180deg, #fff, #fff 70%, #f3fff7)
+    }
+
+    .alert.success .ico {
+        border-color: #d9f7e4
+    }
+
+    .alert.warn {
+        border-color: #fde9c3;
+        background: linear-gradient(180deg, #fff, #fff 70%, #fff9ef)
+    }
+
+    .alert.warn .ico {
+        border-color: #fee7c9
+    }
+
+    .alert.info {
+        border-color: #dbeafe;
+        background: linear-gradient(180deg, #fff, #fff 70%, #f5faff)
+    }
+
+    .alert.info .ico {
+        border-color: #dbeafe
+    }
+
+    .alert.danger {
+        border-color: #fed7df;
+        background: linear-gradient(180deg, #fff, #fff 70%, #fff1f4)
+    }
+
+    .alert.danger .ico {
+        border-color: #fed7df
+    }
+
+    /* pill action on alert (optional) */
+    .alert .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 6px
+    }
+
+    .alert .pill {
+        height: 34px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid var(--bd);
+        background: #ffe7f2;
+        font-weight: 800
+    }
 </style>
 
 
 <div class="alerts" id="alerts">
-  <?php if (!empty($_GET['saved'])): ?>
-    <div class="alert success" role="status">
-      <div class="ico">
-        <!-- check -->
-        <svg width="18" height="18" viewBox="0 0 20 20" fill="#10b981"><path d="M7.8 14.6 3.9 10.7l1.4-1.4 2.5 2.5 6-6 1.4 1.4-7.4 7.4z"/></svg>
-      </div>
-      <div class="txt">
-        <div class="ttl">Berhasil</div>
-        <p class="msg">Pertanyaan tersimpan.</p>
-      </div>
-      <button class="close" aria-label="Tutup" data-close-alert>
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="#6b7280"><path d="M5 5l10 10M15 5 5 15" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-  <?php endif; ?>
+    <?php if (!empty($_GET['saved'])): ?>
+        <div class="alert success" role="status">
+            <div class="ico">
+                <!-- check -->
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="#10b981">
+                    <path d="M7.8 14.6 3.9 10.7l1.4-1.4 2.5 2.5 6-6 1.4 1.4-7.4 7.4z" />
+                </svg>
+            </div>
+            <div class="txt">
+                <div class="ttl">Berhasil</div>
+                <p class="msg">Pertanyaan tersimpan.</p>
+            </div>
+            <button class="close" aria-label="Tutup" data-close-alert>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="#6b7280">
+                    <path d="M5 5l10 10M15 5 5 15" stroke="#6b7280" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </button>
+        </div>
+    <?php endif; ?>
 
-  <?php if (!empty($_GET['updated'])): ?>
-    <div class="alert info" role="status">
-      <div class="ico">
-        <!-- info -->
-        <svg width="18" height="18" viewBox="0 0 20 20" fill="#3b82f6"><path d="M10 2a8 8 0 110 16 8 8 0 010-16zm1 11H9V9h2v4zm0-6H9V5h2v2z"/></svg>
-      </div>
-      <div class="txt">
-        <div class="ttl">Status diperbarui</div>
-        <p class="msg">Perubahan telah disimpan.</p>
-      </div>
-      <button class="close" aria-label="Tutup" data-close-alert>
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="#6b7280"><path d="M5 5l10 10M15 5 5 15" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-  <?php endif; ?>
+    <?php if (!empty($_GET['updated'])): ?>
+        <div class="alert info" role="status">
+            <div class="ico">
+                <!-- info -->
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="#3b82f6">
+                    <path d="M10 2a8 8 0 110 16 8 8 0 010-16zm1 11H9V9h2v4zm0-6H9V5h2v2z" />
+                </svg>
+            </div>
+            <div class="txt">
+                <div class="ttl">Status diperbarui</div>
+                <p class="msg">Perubahan telah disimpan.</p>
+            </div>
+            <button class="close" aria-label="Tutup" data-close-alert>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="#6b7280">
+                    <path d="M5 5l10 10M15 5 5 15" stroke="#6b7280" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </button>
+        </div>
+    <?php endif; ?>
 
-  <?php if (!empty($_GET['deleted'])): ?>
-    <div class="alert danger" role="alert">
-      <div class="ico">
-        <!-- danger -->
-        <svg width="18" height="18" viewBox="0 0 20 20" fill="#ef4444"><path d="M10 2l8 14H2L10 2zm-1 5h2v4H9V7zm0 6h2v2H9v-2z"/></svg>
-      </div>
-      <div class="txt">
-        <div class="ttl">Terhapus</div>
-        <p class="msg">Pertanyaan telah dihapus.</p>
-      </div>
-      <button class="close" aria-label="Tutup" data-close-alert>
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="#6b7280"><path d="M5 5l10 10M15 5 5 15" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-  <?php endif; ?>
+    <?php if (!empty($_GET['deleted'])): ?>
+        <div class="alert danger" role="alert">
+            <div class="ico">
+                <!-- danger -->
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="#ef4444">
+                    <path d="M10 2l8 14H2L10 2zm-1 5h2v4H9V7zm0 6h2v2H9v-2z" />
+                </svg>
+            </div>
+            <div class="txt">
+                <div class="ttl">Terhapus</div>
+                <p class="msg">Pertanyaan telah dihapus.</p>
+            </div>
+            <button class="close" aria-label="Tutup" data-close-alert>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="#6b7280">
+                    <path d="M5 5l10 10M15 5 5 15" stroke="#6b7280" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </button>
+        </div>
+    <?php endif; ?>
 
-  <?php if (!empty($flash)): ?>
-    <div class="alert warn" role="alert">
-      <div class="ico">
-        <!-- warn -->
-        <svg width="18" height="18" viewBox="0 0 20 20" fill="#f59e0b"><path d="M10 2l8 14H2L10 2zm-1 9h2V7H9v4zm0 4h2v-2H9v2z"/></svg>
-      </div>
-      <div class="txt">
-        <div class="ttl">Perlu perhatian</div>
-        <p class="msg"><?= h($flash) ?></p>
-      </div>
-      <button class="close" aria-label="Tutup" data-close-alert>
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="#6b7280"><path d="M5 5l10 10M15 5 5 15" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-  <?php endif; ?>
+    <?php if (!empty($flash)): ?>
+        <div class="alert warn" role="alert">
+            <div class="ico">
+                <!-- warn -->
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="#f59e0b">
+                    <path d="M10 2l8 14H2L10 2zm-1 9h2V7H9v4zm0 4h2v-2H9v2z" />
+                </svg>
+            </div>
+            <div class="txt">
+                <div class="ttl">Perlu perhatian</div>
+                <p class="msg"><?= h($flash) ?></p>
+            </div>
+            <button class="close" aria-label="Tutup" data-close-alert>
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="#6b7280">
+                    <path d="M5 5l10 10M15 5 5 15" stroke="#6b7280" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </button>
+        </div>
+    <?php endif; ?>
 </div>
 
 <script>
-(function(){
-  const container = document.getElementById('alerts');
-  if(!container) return;
+    (function () {
+        const container = document.getElementById('alerts');
+        if (!container) return;
 
-  // close by button
-  container.addEventListener('click', (e)=>{
-    const btn = e.target.closest('[data-close-alert]');
-    if(!btn) return;
-    const card = btn.closest('.alert');
-    if(card){
-      card.style.transition='opacity .18s ease, transform .18s ease';
-      card.style.opacity='0'; card.style.transform='translateY(-4px)';
-      setTimeout(()=> card.remove(), 180);
-    }
-  });
+        // close by button
+        container.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-close-alert]');
+            if (!btn) return;
+            const card = btn.closest('.alert');
+            if (card) {
+                card.style.transition = 'opacity .18s ease, transform .18s ease';
+                card.style.opacity = '0'; card.style.transform = 'translateY(-4px)';
+                setTimeout(() => card.remove(), 180);
+            }
+        });
 
-  // auto dismiss
-  container.querySelectorAll('.alert').forEach((card)=>{
-    let timeout = setTimeout(()=> {
-      card.querySelector('[data-close-alert]')?.click();
-    }, 4500);
+        // auto dismiss
+        container.querySelectorAll('.alert').forEach((card) => {
+            let timeout = setTimeout(() => {
+                card.querySelector('[data-close-alert]')?.click();
+            }, 4500);
 
-    card.addEventListener('mouseenter', ()=> clearTimeout(timeout));
-    card.addEventListener('mouseleave', ()=>{
-      timeout = setTimeout(()=> {
-        card.querySelector('[data-close-alert]')?.click();
-      }, 2000);
-    });
-  });
-})();
+            card.addEventListener('mouseenter', () => clearTimeout(timeout));
+            card.addEventListener('mouseleave', () => {
+                timeout = setTimeout(() => {
+                    card.querySelector('[data-close-alert]')?.click();
+                }, 2000);
+            });
+        });
+    })();
 </script>
 
 
@@ -1011,7 +1117,7 @@ include __DIR__ . '/_head.php';
                                             </div>
 
                                             <!-- kanan (status boleh tampil; jika ingin hilang, hapus blok ini) -->
-                                            
+
 
                                             <div class="field">
                                                 <div class="label">Opsi 1</div>
@@ -1158,34 +1264,34 @@ include __DIR__ . '/_head.php';
 </script>
 
 <script>
-  // Tandai baris yang sedang membuka <details class="edit">
-  (function(){
-    const edits = document.querySelectorAll('details.edit');
+    // Tandai baris yang sedang membuka <details class="edit">
+    (function () {
+        const edits = document.querySelectorAll('details.edit');
 
-    function closeAllExcept(me){
-      edits.forEach(d => {
-        if (d !== me) {
-          d.open = false;
-          const tr = d.closest('tr');
-          tr && tr.classList.remove('editing');
+        function closeAllExcept(me) {
+            edits.forEach(d => {
+                if (d !== me) {
+                    d.open = false;
+                    const tr = d.closest('tr');
+                    tr && tr.classList.remove('editing');
+                }
+            });
         }
-      });
-    }
 
-    edits.forEach(d => {
-      d.addEventListener('toggle', () => {
-        const tr = d.closest('tr');
-        if (!tr) return;
+        edits.forEach(d => {
+            d.addEventListener('toggle', () => {
+                const tr = d.closest('tr');
+                if (!tr) return;
 
-        if (d.open) {
-          closeAllExcept(d);
-          tr.classList.add('editing');   // => CSS menyembunyikan .toggle-wrap & .del-wrap
-        } else {
-          tr.classList.remove('editing');
-        }
-      });
-    });
-  })();
+                if (d.open) {
+                    closeAllExcept(d);
+                    tr.classList.add('editing');   // => CSS menyembunyikan .toggle-wrap & .del-wrap
+                } else {
+                    tr.classList.remove('editing');
+                }
+            });
+        });
+    })();
 </script>
 
 <?php include __DIR__ . '/_foot.php'; ?>

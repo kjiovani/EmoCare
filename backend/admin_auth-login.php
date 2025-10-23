@@ -5,23 +5,26 @@ require_once __DIR__ . '/config.php';
 
 /* —— CSRF —— */
 if (!hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? '')) {
-  header('Location: /admin_login.php?err=csrf'); exit;
+  header('Location: /admin_login.php?err=csrf');
+  exit;
 }
 
 /* —— Throttle sederhana (per sesi) —— */
 $_SESSION['admin_login_try'] = $_SESSION['admin_login_try'] ?? 0;
-$_SESSION['admin_login_at']  = $_SESSION['admin_login_at']  ?? 0;
+$_SESSION['admin_login_at'] = $_SESSION['admin_login_at'] ?? 0;
 
 $now = time();
 if ($_SESSION['admin_login_try'] >= 5 && ($now - $_SESSION['admin_login_at']) < 60) {
-  header('Location: /admin_login.php?err=throttle'); exit;
+  header('Location: /admin_login.php?err=throttle');
+  exit;
 }
 
 $user = trim($_POST['user'] ?? '');
-$pass = (string)($_POST['pass'] ?? '');
+$pass = (string) ($_POST['pass'] ?? '');
 
 if ($user === '' || $pass === '') {
-  header('Location: /admin_login.php?err=invalid'); exit;
+  header('Location: /admin_login.php?err=invalid');
+  exit;
 }
 
 /* 
@@ -43,33 +46,35 @@ $acc = $res->fetch_assoc();
 $stmt->close();
 
 $ok = false;
-if ($acc && (int)$acc['is_active'] === 1 && $acc['role'] === 'admin') {
+if ($acc && (int) $acc['is_active'] === 1 && $acc['role'] === 'admin') {
   // Password check
-  $ok = password_verify($pass, (string)$acc['password_hash']);
+  $ok = password_verify($pass, (string) $acc['password_hash']);
 }
 
 if (!$ok) {
   // catat percobaan
   $_SESSION['admin_login_try'] = ($_SESSION['admin_login_try'] ?? 0) + 1;
-  $_SESSION['admin_login_at']  = time();
+  $_SESSION['admin_login_at'] = time();
   // pesan berbeda untuk nonaktif
-  if ($acc && (int)$acc['is_active'] !== 1) {
-    header('Location: /admin_login.php?err=inactive'); exit;
+  if ($acc && (int) $acc['is_active'] !== 1) {
+    header('Location: /admin_login.php?err=inactive');
+    exit;
   }
-  header('Location: /admin_login.php?err=invalid'); exit;
+  header('Location: /admin_login.php?err=invalid');
+  exit;
 }
 
 // Sukses: reset throttle
 $_SESSION['admin_login_try'] = 0;
-$_SESSION['admin_login_at']  = 0;
+$_SESSION['admin_login_at'] = 0;
 
 // Set session aplikasi (sesuai yang dipakai di project-mu)
 $_SESSION['user'] = [
-  'pengguna_id' => (int)$acc['pengguna_id'],
-  'nama'        => (string)$acc['nama'],
-  'role'        => (string)$acc['role'],
-  'email'       => (string)$acc['email'],
-  'username'    => (string)$acc['username'],
+  'pengguna_id' => (int) $acc['pengguna_id'],
+  'nama' => (string) $acc['nama'],
+  'role' => (string) $acc['role'],
+  'email' => (string) $acc['email'],
+  'username' => (string) $acc['username'],
 ];
 
 // Optional: regenerate session id

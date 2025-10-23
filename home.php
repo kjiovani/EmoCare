@@ -3,8 +3,8 @@ require_once __DIR__ . '/backend/config.php';
 require_login();
 
 /* --- identitas & role --- */
-$uid    = (int)($_SESSION['user']['pengguna_id'] ?? 0);
-$nama   = $_SESSION['user']['nama'] ?? 'Pengguna';
+$uid = (int) ($_SESSION['user']['pengguna_id'] ?? 0);
+$nama = $_SESSION['user']['nama'] ?? 'Pengguna';
 $isAdmin = false;
 $stmt = $mysqli->prepare("SELECT role FROM pengguna WHERE pengguna_id=? LIMIT 1");
 $stmt->bind_param('i', $uid);
@@ -30,12 +30,14 @@ $sql = "
   WHERE l.is_active = 1
   ORDER BY l.sort_order ASC, l.id ASC
 ";
-if ($res = $mysqli->query($sql)) { $quizzes = $res->fetch_all(MYSQLI_ASSOC); }
+if ($res = $mysqli->query($sql)) {
+  $quizzes = $res->fetch_all(MYSQLI_ASSOC);
+}
 
 /* --- flash & handlers Mood Tracker --- */
 $flash = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'create')) {
-  $mood = (int)($_POST['mood_level'] ?? 0);
+  $mood = (int) ($_POST['mood_level'] ?? 0);
   $note = trim($_POST['catatan'] ?? '');
   if ($mood < 1 || $mood > 5) {
     $flash = 'Skala mood harus 1..5';
@@ -55,8 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'crea
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'delete')) {
   $ids = array_values(array_filter(array_map('intval', $_POST['delete_ids'] ?? [])));
   if ($ids) {
-    $in   = implode(',', array_fill(0, count($ids), '?'));
-    $sql  = "DELETE FROM moodtracker WHERE pengguna_id=? AND mood_id IN ($in)";
+    $in = implode(',', array_fill(0, count($ids), '?'));
+    $sql = "DELETE FROM moodtracker WHERE pengguna_id=? AND mood_id IN ($in)";
     $stmt = $mysqli->prepare($sql);
     $types = 'i' . str_repeat('i', count($ids));
     $params = array_merge([$uid], $ids);
@@ -71,11 +73,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'dele
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'edit')) {
-  $id   = (int)($_POST['mood_id'] ?? 0);
-  $mood = (int)($_POST['mood_level'] ?? 0);
+  $id = (int) ($_POST['mood_id'] ?? 0);
+  $mood = (int) ($_POST['mood_level'] ?? 0);
   $note = trim($_POST['catatan'] ?? '');
-  if ($id <= 0)              $flash = 'Data tidak valid.';
-  elseif ($mood < 1 || $mood > 5) $flash = 'Skala mood harus 1..5';
+  if ($id <= 0)
+    $flash = 'Data tidak valid.';
+  elseif ($mood < 1 || $mood > 5)
+    $flash = 'Skala mood harus 1..5';
   else {
     $sql = "UPDATE moodtracker SET mood_level=?, catatan=? WHERE mood_id=? AND pengguna_id=?";
     $stmt = $mysqli->prepare($sql);
@@ -92,11 +96,11 @@ $items = [];
 $s = trim($_GET['s'] ?? '');
 $conds = ['pengguna_id = ?'];
 $types = 'i';
-$vals  = [$uid];
+$vals = [$uid];
 if ($s !== '') {
   $conds[] = '(tanggal LIKE ? OR catatan LIKE ? OR CAST(mood_level AS CHAR) LIKE ?)';
-  $types  .= 'sss';
-  $like    = '%' . $s . '%';
+  $types .= 'sss';
+  $like = '%' . $s . '%';
   array_push($vals, $like, $like, $like);
 }
 $sql = "SELECT mood_id, tanggal, mood_level, catatan
@@ -107,11 +111,13 @@ $q = $mysqli->prepare($sql);
 $q->bind_param($types, ...$vals);
 $q->execute();
 $res = $q->get_result();
-while ($row = $res->fetch_assoc()) $items[] = $row;
+while ($row = $res->fetch_assoc())
+  $items[] = $row;
 $q->close();
 ?>
 <!doctype html>
 <html lang="id">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -120,44 +126,115 @@ $q->close();
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/mood.css" />
   <style>
-    .bg-hero { background: linear-gradient(135deg,#ffe0ea 0%,#e7dcff 50%,#dfe9ff 100%) }
+    .bg-hero {
+      background: linear-gradient(135deg, #ffe0ea 0%, #e7dcff 50%, #dfe9ff 100%)
+    }
 
     /* ====== Kuis Psikologi (grid) ====== */
-    .quiz-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px }
-    .quiz-card{
-      display:flex; gap:14px; align-items:flex-start;
-      background:#fff; border:1px solid var(--bd); border-radius:18px;
-      padding:16px; box-shadow:var(--shadow);
+    .quiz-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px
     }
-    .quiz-ico{
-      width:48px; height:48px; border-radius:14px; flex:0 0 48px;
-      display:grid; place-items:center; font-size:22px;
-      background:linear-gradient(180deg,#ffe7f2,#fff); border:1px solid var(--bd);
+
+    .quiz-card {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      background: #fff;
+      border: 1px solid var(--bd);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: var(--shadow);
     }
-    .quiz-body{ flex:1 }
-    .quiz-name{ font-weight:900; color:#111; margin-bottom:4px }
-    .quiz-desc{ color:#6b7280; line-height:1.5; margin-bottom:10px }
-    .quiz-meta{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-    .chip{
-      display:inline-flex; align-items:center; gap:6px;
-      padding:6px 10px; border-radius:999px;
-      background:#fff; border:1px solid var(--bd); font-weight:700; color:#c21762;
+
+    .quiz-ico {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      flex: 0 0 48px;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      background: linear-gradient(180deg, #ffe7f2, #fff);
+      border: 1px solid var(--bd);
     }
-    .btn{ background:#f472b6; color:#fff; border:0; border-radius:14px; padding:10px 14px; font-weight:800; cursor:pointer; box-shadow:0 6px 14px rgba(236,72,153,.12) }
-    .btn[disabled]{ opacity:.55; cursor:not-allowed }
-    .btn.ghost{ background:#fff; color:#be185d; border:1px solid #f9a8d4 }
+
+    .quiz-body {
+      flex: 1
+    }
+
+    .quiz-name {
+      font-weight: 900;
+      color: #111;
+      margin-bottom: 4px
+    }
+
+    .quiz-desc {
+      color: #6b7280;
+      line-height: 1.5;
+      margin-bottom: 10px
+    }
+
+    .quiz-meta {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--bd);
+      font-weight: 700;
+      color: #c21762;
+    }
+
+    .btn {
+      background: #f472b6;
+      color: #fff;
+      border: 0;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(236, 72, 153, .12)
+    }
+
+    .btn[disabled] {
+      opacity: .55;
+      cursor: not-allowed
+    }
+
+    .btn.ghost {
+      background: #fff;
+      color: #be185d;
+      border: 1px solid #f9a8d4
+    }
 
     /* tabel riwayat dsb (sudah ada pada css utama, hanya pelengkap kecil) */
-    .empty{
-      padding:18px; border:1px dashed #f4cadd; border-radius:14px;
-      background:linear-gradient(180deg,#fff,#fff 70%,#fff8fc);
-      color:#6b7280; text-align:center; font-weight:600;
+    .empty {
+      padding: 18px;
+      border: 1px dashed #f4cadd;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #fff, #fff 70%, #fff8fc);
+      color: #6b7280;
+      text-align: center;
+      font-weight: 600;
     }
 
     /* Sembunyikan info "soal aktif" untuk pengguna biasa */
-.role-user .qp-meta { display: none !important; }
+    .role-user .qp-meta {
+      display: none !important;
+    }
   </style>
 </head>
+
 <body class="ec-body <?= $isAdmin ? 'role-admin' : 'role-user' ?>">
   <header class="ec-nav">
     <div class="ec-nav-inner">
@@ -166,9 +243,11 @@ $q->close();
         <a href="#top">Beranda</a>
         <a href="#features">Fitur</a>
         <a href="#stats">Statistik</a>
-        <?php if ($isAdmin): ?><a href="admin/dashboard.php" class="btn ghost" style="margin-left:8px">Admin</a><?php endif; ?>
+        <?php if ($isAdmin): ?><a href="admin/dashboard.php" class="btn ghost"
+            style="margin-left:8px">Admin</a><?php endif; ?>
       </nav>
-      <form action="backend/auth_logout.php" method="post" style="margin:0"><button class="ec-btn-outline">Keluar</button></form>
+      <form action="backend/auth_logout.php" method="post" style="margin:0"><button
+          class="ec-btn-outline">Keluar</button></form>
     </div>
   </header>
 
@@ -176,7 +255,8 @@ $q->close();
     <!-- Greeting / Hero -->
     <section class="ec-card ec-hero" id="greetingCard">
       <div class="ec-hero-left">
-        <div class="ec-hero-title">Selamat <span id="greetTimeWord">Pagi</span>, <span id="greetUsername"><?= htmlspecialchars($nama) ?></span>! 🙌🏻</div>
+        <div class="ec-hero-title">Selamat <span id="greetTimeWord">Pagi</span>, <span
+            id="greetUsername"><?= htmlspecialchars($nama) ?></span>! 🙌🏻</div>
         <div class="ec-hero-sub">Gimana hari ini?</div>
       </div>
       <div class="ec-hero-right">
@@ -213,9 +293,9 @@ $q->close();
                 <?php endif; ?>
                 <div class="quiz-meta">
                   <?php if ($isAdmin): ?>
-  <span class="chip"><?= (int)$q['active_q'] ?>/<?= (int)$q['total_q'] ?> soal aktif</span>
-<?php endif; ?>
-                  <?php if ((int)$q['active_q'] > 0): ?>
+                    <span class="chip"><?= (int) $q['active_q'] ?>/<?= (int) $q['total_q'] ?> soal aktif</span>
+                  <?php endif; ?>
+                  <?php if ((int) $q['active_q'] > 0): ?>
                     <a class="btn" href="play_quiz.php?cat=<?= urlencode($q['slug']) ?>">Mulai Kuis</a>
                   <?php else: ?>
                     <button class="btn" disabled>Belum ada soal</button>
@@ -232,7 +312,10 @@ $q->close();
     <section id="mood-tracker" class="ec-mood-grid">
       <!-- Form -->
       <article class="card ec-mood-card">
-        <div class="card-bar"><div class="bar-dot"></div><h3 class="bar-title">Mood Tracker</h3></div>
+        <div class="card-bar">
+          <div class="bar-dot"></div>
+          <h3 class="bar-title">Mood Tracker</h3>
+        </div>
 
         <?php if (!empty($_GET['saved'])): ?>
           <p class="form-success" role="status">Mood tersimpan!</p>
@@ -249,7 +332,8 @@ $q->close();
           <div class="form-row">
             <label>Skala Mood</label>
             <div class="scale-group" role="radiogroup" aria-label="Skala Mood">
-              <label class="scale-pill"><input type="radio" name="mood_level" value="1" required>1. Senang Banget</label>
+              <label class="scale-pill"><input type="radio" name="mood_level" value="1" required>1. Senang
+                Banget</label>
               <label class="scale-pill"><input type="radio" name="mood_level" value="2">2. Senang</label>
               <label class="scale-pill"><input type="radio" name="mood_level" value="3">3. Biasa</label>
               <label class="scale-pill"><input type="radio" name="mood_level" value="4">4. Cemas</label>
@@ -272,24 +356,34 @@ $q->close();
 
       <!-- Riwayat -->
       <article class="card ec-history-card">
-        <div class="card-bar"><div class="bar-dot"></div><h3 class="bar-title">Riwayat Mood</h3></div>
+        <div class="card-bar">
+          <div class="bar-dot"></div>
+          <h3 class="bar-title">Riwayat Mood</h3>
+        </div>
 
         <div class="ec-toolbar" style="display:flex; align-items:center; gap:8px; width:100%; margin:12px 0;">
           <form action="home.php#top" method="get" style="display:flex; align-items:center; gap:8px; flex:1;">
-            <input type="text" name="s" placeholder="Cari…" value="<?= htmlspecialchars($_GET['s'] ?? '') ?>" style="flex:1; min-width:0; height:36px;">
+            <input type="text" name="s" placeholder="Cari…" value="<?= htmlspecialchars($_GET['s'] ?? '') ?>"
+              style="flex:1; min-width:0; height:36px;">
             <button type="submit" class="btn btn-primary">Cari</button>
           </form>
           <button type="button" id="btnEdit" class="btn btn-ghost" disabled>Edit</button>
-          <button type="submit" form="del-form" id="btnDelete" class="btn btn-ghost" disabled onclick="return confirm('Hapus baris yang dipilih?');">Hapus</button>
+          <button type="submit" form="del-form" id="btnDelete" class="btn btn-ghost" disabled
+            onclick="return confirm('Hapus baris yang dipilih?');">Hapus</button>
         </div>
 
-        <form id="edit-form" action="home.php#top" method="post" style="display:none; border:1px dashed #e5e7eb; padding:10px; border-radius:10px; margin:-4px 0 12px;">
+        <form id="edit-form" action="home.php#top" method="post"
+          style="display:none; border:1px dashed #e5e7eb; padding:10px; border-radius:10px; margin:-4px 0 12px;">
           <input type="hidden" name="action" value="edit">
           <input type="hidden" name="mood_id" id="edit-id">
           <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
             <label> Mood:
               <select name="mood_level" id="edit-mood" required>
-                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
               </select>
             </label>
             <label style="flex:1; min-width:240px;">
@@ -316,20 +410,23 @@ $q->close();
               </thead>
               <tbody id="tbody-history">
                 <?php if (empty($items)): ?>
-                  <tr class="empty"><td colspan="5">Belum ada data.</td></tr>
-                <?php else: foreach ($items as $i => $it): ?>
-                  <tr>
-                    <td style="text-align:center;">
-                      <input type="checkbox" class="rowchk" name="delete_ids[]" value="<?= (int)$it['mood_id'] ?>"
-                        data-mood="<?= (int)$it['mood_level'] ?>"
-                        data-note="<?= htmlspecialchars($it['catatan'] ?? '', ENT_QUOTES) ?>">
-                    </td>
-                    <td><?= $i + 1 ?></td>
-                    <td><?= htmlspecialchars($it['tanggal']) ?></td>
-                    <td><?= (int)$it['mood_level'] ?></td>
-                    <td><?= nl2br(htmlspecialchars($it['catatan'] ?? '')) ?></td>
+                  <tr class="empty">
+                    <td colspan="5">Belum ada data.</td>
                   </tr>
-                <?php endforeach; endif; ?>
+                <?php else:
+                  foreach ($items as $i => $it): ?>
+                    <tr>
+                      <td style="text-align:center;">
+                        <input type="checkbox" class="rowchk" name="delete_ids[]" value="<?= (int) $it['mood_id'] ?>"
+                          data-mood="<?= (int) $it['mood_level'] ?>"
+                          data-note="<?= htmlspecialchars($it['catatan'] ?? '', ENT_QUOTES) ?>">
+                      </td>
+                      <td><?= $i + 1 ?></td>
+                      <td><?= htmlspecialchars($it['tanggal']) ?></td>
+                      <td><?= (int) $it['mood_level'] ?></td>
+                      <td><?= nl2br(htmlspecialchars($it['catatan'] ?? '')) ?></td>
+                    </tr>
+                  <?php endforeach; endif; ?>
               </tbody>
             </table>
           </div>
@@ -341,18 +438,32 @@ $q->close();
     <section id="stats" class="ec-card">
       <h2 class="ec-section-title">Statistik &amp; Progress</h2>
       <div class="ec-tiles">
-        <div class="ec-tile"><div class="k">Total Aktivitas</div><div class="v"><?= count($items) ?></div></div>
-        <div class="ec-tile"><div class="k">Streak Harian</div><div class="v" id="tileStreak">0 hari</div></div>
+        <div class="ec-tile">
+          <div class="k">Total Aktivitas</div>
+          <div class="v"><?= count($items) ?></div>
+        </div>
+        <div class="ec-tile">
+          <div class="k">Streak Harian</div>
+          <div class="v" id="tileStreak">0 hari</div>
+        </div>
         <div class="ec-tile">
           <div class="k">Rata-rata Mood</div>
           <div class="v">
             <?php
-              if ($items) { $sum = 0; foreach ($items as $it) $sum += (int)$it['mood_level']; echo round($sum / count($items), 2) . '/5'; }
-              else echo '0/5';
+            if ($items) {
+              $sum = 0;
+              foreach ($items as $it)
+                $sum += (int) $it['mood_level'];
+              echo round($sum / count($items), 2) . '/5';
+            } else
+              echo '0/5';
             ?>
           </div>
         </div>
-        <div class="ec-tile"><div class="k">Kuis Selesai</div><div class="v" id="tileQuizDone">0</div></div>
+        <div class="ec-tile">
+          <div class="k">Kuis Selesai</div>
+          <div class="v" id="tileQuizDone">0</div>
+        </div>
       </div>
     </section>
   </main>
@@ -360,29 +471,29 @@ $q->close();
   <script>
     // Jam & ucapan sederhana
     const clock = document.getElementById('greetClock'), word = document.getElementById('greetTimeWord');
-    function tick(){
+    function tick() {
       const d = new Date();
-      clock.textContent = d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
-      const h = d.getHours(); word.textContent = (h<11)?'Pagi':(h<15)?'Siang':(h<18)?'Sore':'Malam';
+      clock.textContent = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      const h = d.getHours(); word.textContent = (h < 11) ? 'Pagi' : (h < 15) ? 'Siang' : (h < 18) ? 'Sore' : 'Malam';
     } tick(); setInterval(tick, 30000);
   </script>
 
   <script>
-    (function(){
+    (function () {
       const btnDelete = document.getElementById('btnDelete');
-      const btnEdit   = document.getElementById('btnEdit');
-      const chkAll    = document.getElementById('chkAll');
-      const editForm  = document.getElementById('edit-form');
-      const editId    = document.getElementById('edit-id');
-      const editMood  = document.getElementById('edit-mood');
-      const editNote  = document.getElementById('edit-note');
-      const editCancel= document.getElementById('edit-cancel');
+      const btnEdit = document.getElementById('btnEdit');
+      const chkAll = document.getElementById('chkAll');
+      const editForm = document.getElementById('edit-form');
+      const editId = document.getElementById('edit-id');
+      const editMood = document.getElementById('edit-mood');
+      const editNote = document.getElementById('edit-note');
+      const editCancel = document.getElementById('edit-cancel');
 
-      function getChecked(){ return Array.from(document.querySelectorAll('.rowchk:checked')) }
-      function refresh(){
+      function getChecked() { return Array.from(document.querySelectorAll('.rowchk:checked')) }
+      function refresh() {
         const rows = getChecked();
         if (btnDelete) btnDelete.disabled = (rows.length === 0);
-        if (btnEdit)   btnEdit.disabled   = (rows.length !== 1);
+        if (btnEdit) btnEdit.disabled = (rows.length !== 1);
         if (rows.length !== 1 && editForm) editForm.style.display = 'none';
       }
 
@@ -405,15 +516,16 @@ $q->close();
 
   <?php if (!empty($_GET['updated']) || !empty($_GET['deleted'])): ?>
     <script>
-      (function(){
+      (function () {
         const url = new URL(location.href);
         const msg = url.searchParams.has('updated') ? 'Riwayat berhasil diperbarui.' : 'Riwayat terpilih berhasil dihapus.';
         alert(msg);
-        ['deleted','saved','updated'].forEach(k => url.searchParams.delete(k));
+        ['deleted', 'saved', 'updated'].forEach(k => url.searchParams.delete(k));
         const qs = url.searchParams.toString();
-        history.replaceState(null,'', url.pathname + (qs?('?' + qs):'') + url.hash);
+        history.replaceState(null, '', url.pathname + (qs ? ('?' + qs) : '') + url.hash);
       })();
     </script>
   <?php endif; ?>
 </body>
+
 </html>

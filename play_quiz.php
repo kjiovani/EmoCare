@@ -22,12 +22,12 @@ if (!$QUIZ) {
   exit('Kuis tidak ditemukan.');
 }
 $QUIZ_NAME = $QUIZ['name'];
-$CATEGORY  = $QUIZ['slug']; // dipakai untuk query pertanyaan
+$CATEGORY = $QUIZ['slug']; // dipakai untuk query pertanyaan
 
 /* ============================
    Ambil pertanyaan aktif + opsi
 ============================ */
-$qs  = [];
+$qs = [];
 $ids = [];
 
 $st = $mysqli->prepare("
@@ -41,17 +41,17 @@ $st->bind_param('s', $CATEGORY);
 $st->execute();
 $res = $st->get_result();
 while ($row = $res->fetch_assoc()) {
-  $row['id'] = (int)$row['id'];
-  $qs[]  = $row;
-  $ids[] = (int)$row['id'];
+  $row['id'] = (int) $row['id'];
+  $qs[] = $row;
+  $ids[] = (int) $row['id'];
 }
 $st->close();
 
 $optmap = [];
 if ($ids) {
-  $in    = implode(',', array_fill(0, count($ids), '?'));
+  $in = implode(',', array_fill(0, count($ids), '?'));
   $types = str_repeat('i', count($ids));
-  $sql   = "SELECT question_id, option_text
+  $sql = "SELECT question_id, option_text
             FROM quiz_options
             WHERE question_id IN ($in)
             ORDER BY option_order ASC, id ASC";
@@ -60,8 +60,9 @@ if ($ids) {
   $st->execute();
   $rr = $st->get_result();
   while ($o = $rr->fetch_assoc()) {
-    $qid = (int)$o['question_id'];
-    if (!isset($optmap[$qid])) $optmap[$qid] = [];
+    $qid = (int) $o['question_id'];
+    if (!isset($optmap[$qid]))
+      $optmap[$qid] = [];
     $optmap[$qid][] = $o['option_text'];
   }
   $st->close();
@@ -70,15 +71,15 @@ if ($ids) {
 /* payload ke klien */
 $payload = [];
 foreach ($qs as $q) {
-  $opts = $optmap[(int)$q['id']] ?? [];
+  $opts = $optmap[(int) $q['id']] ?? [];
   if (count($opts) < 2) {
     $opts = ['Tidak Pernah', 'Jarang', 'Sering', 'Sangat Sering'];
   }
-  $img = trim((string)$q['image_path']);
+  $img = trim((string) $q['image_path']);
   $payload[] = [
-    'id'   => (int)$q['id'],
-    'q'    => $q['question_text'],
-    'img'  => $img ? ('../' . $img) : null, // path relatif dari dokumen root
+    'id' => (int) $q['id'],
+    'q' => $q['question_text'],
+    'img' => $img ? ('../' . $img) : null, // path relatif dari dokumen root
     'opts' => array_values($opts),
   ];
 }
@@ -87,7 +88,7 @@ foreach ($qs as $q) {
    Submit: hitung & simpan
 ============================ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'finish')) {
-  $uid = (int)($_SESSION['user']['pengguna_id'] ?? 0);
+  $uid = (int) ($_SESSION['user']['pengguna_id'] ?? 0);
   $catPost = trim($_POST['cat'] ?? '');
 
   // ambil kembali slug valid (hindari manipulasi)
@@ -113,15 +114,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'fini
   $st->bind_param('s', $catPost);
   $st->execute();
   $rs = $st->get_result();
-  while ($r = $rs->fetch_assoc()) $validIds[(int)$r['id']] = true;
+  while ($r = $rs->fetch_assoc())
+    $validIds[(int) $r['id']] = true;
   $st->close();
 
-  $sumPct = 0.0; $count = 0;
+  $sumPct = 0.0;
+  $count = 0;
   foreach ($answers as $a) {
-    $qid = (int)($a['id'] ?? 0);
-    $v   = (int)($a['v']  ?? 0);
-    if (!isset($validIds[$qid])) continue;
-    if ($v < 1 || $v > 4) continue;
+    $qid = (int) ($a['id'] ?? 0);
+    $v = (int) ($a['v'] ?? 0);
+    if (!isset($validIds[$qid]))
+      continue;
+    if ($v < 1 || $v > 4)
+      continue;
     $sumPct += (($v - 1) / 3) * 100.0;
     $count++;
   }
@@ -132,10 +137,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'fini
   $scorePct = round($sumPct / $count, 2);
 
   // interpretasi
-  if     ($scorePct >= 85) { $label='Mental Sehat';  $note='Kondisi emosional stabil & adaptif. Pertahankan kebiasaan baik.'; }
-  elseif ($scorePct >= 75) { $label='Sedang';        $note='Ada tanda beban psikologis ringan—atur tidur, olahraga, dan kelola beban.'; }
-  elseif ($scorePct >= 50) { $label='Stres';         $note='Stres bermakna. Latih relaksasi/napas dalam, kurangi pemicu, minta dukungan.'; }
-  else                     { $label='Depresi Berat'; $note='Pertimbangkan konselor/psikolog. Bila ada pikiran menyakiti diri, cari bantuan darurat.'; }
+  if ($scorePct >= 85) {
+    $label = 'Mental Sehat';
+    $note = 'Kondisi emosional stabil & adaptif. Pertahankan kebiasaan baik.';
+  } elseif ($scorePct >= 75) {
+    $label = 'Sedang';
+    $note = 'Ada tanda beban psikologis ringan—atur tidur, olahraga, dan kelola beban.';
+  } elseif ($scorePct >= 50) {
+    $label = 'Stres';
+    $note = 'Stres bermakna. Latih relaksasi/napas dalam, kurangi pemicu, minta dukungan.';
+  } else {
+    $label = 'Depresi Berat';
+    $note = 'Pertimbangkan konselor/psikolog. Bila ada pikiran menyakiti diri, cari bantuan darurat.';
+  }
 
   // simpan attempts
   $ins = $mysqli->prepare("INSERT INTO quiz_attempts (pengguna_id, category, score, label, notes)
@@ -143,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'fini
   // i s d s s  → score numeric lebih aman sebagai double/decimal
   $ins->bind_param('isdss', $uid, $catPost, $scorePct, $label, $note);
   $ok = $ins->execute();
-  $attemptId = (int)$ins->insert_id;
+  $attemptId = (int) $ins->insert_id;
   $ins->close();
 
   if ($ok && $attemptId > 0) {
@@ -156,32 +170,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'fini
 ?>
 <!doctype html>
 <html lang="id">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Main Kuis • <?= htmlspecialchars($QUIZ_NAME) ?></title>
   <link rel="stylesheet" href="css/admin.css" />
   <style>
-    .panel{max-width:760px;margin:24px auto;padding:16px;border-radius:18px;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.6)}
-    .title{font-weight:700;margin:0 0 8px}
-    .muted{color:#6b7280}
-    .qtext{font-weight:600;margin:12px 0}
-    .qimg{margin:8px 0 10px}
-    .qimg img{max-width:100%;border-radius:12px;border:1px solid #f1b9cd}
-    .opts label{display:block;padding:10px 12px;border:1px solid #f1b9cd;border-radius:12px;margin:8px 0}
-    .opts input{margin-right:8px}
-    .progress{height:8px;background:#fde2ea;border-radius:999px;overflow:hidden;margin:8px 0 16px}
-    .bar{height:100%;width:4%;background:#f59ab5}
-    .center{display:flex;gap:8px;align-items:center}
-    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    .panel {
+      max-width: 760px;
+      margin: 24px auto;
+      padding: 16px;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, .05), inset 0 1px 0 rgba(255, 255, 255, .6)
+    }
+
+    .title {
+      font-weight: 700;
+      margin: 0 0 8px
+    }
+
+    .muted {
+      color: #6b7280
+    }
+
+    .qtext {
+      font-weight: 600;
+      margin: 12px 0
+    }
+
+    .qimg {
+      margin: 8px 0 10px
+    }
+
+    .qimg img {
+      max-width: 100%;
+      border-radius: 12px;
+      border: 1px solid #f1b9cd
+    }
+
+    .opts label {
+      display: block;
+      padding: 10px 12px;
+      border: 1px solid #f1b9cd;
+      border-radius: 12px;
+      margin: 8px 0
+    }
+
+    .opts input {
+      margin-right: 8px
+    }
+
+    .progress {
+      height: 8px;
+      background: #fde2ea;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 8px 0 16px
+    }
+
+    .bar {
+      height: 100%;
+      width: 4%;
+      background: #f59ab5
+    }
+
+    .center {
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
+
+    .btn[disabled] {
+      opacity: .5;
+      cursor: not-allowed
+    }
   </style>
 </head>
+
 <body>
   <div class="panel">
     <h2 class="title"><?= htmlspecialchars($QUIZ_NAME) ?></h2>
     <div class="muted">Tes psikologi — tidak ada jawaban benar/salah. Pilih yang paling menggambarkan dirimu.</div>
 
-    <div class="progress"><div id="bar" class="bar"></div></div>
+    <div class="progress">
+      <div id="bar" class="bar"></div>
+    </div>
     <div id="qwrap"></div>
 
     <div class="center" style="margin-top:12px">
@@ -201,9 +276,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'fini
 
   <script>
     const DATA = <?= json_encode($payload, JSON_UNESCAPED_UNICODE) ?>;
-    const N    = DATA.length;
+    const N = DATA.length;
 
-    const bar  = document.getElementById('bar');
+    const bar = document.getElementById('bar');
     const wrap = document.getElementById('qwrap');
     const prev = document.getElementById('prev');
     const next = document.getElementById('next');
@@ -213,46 +288,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'fini
     // simpan jawaban dalam {id, v}
     let answers = DATA.map(q => ({ id: q.id, v: null }));
 
-    function render(){
-      if (N === 0){
+    function render() {
+      if (N === 0) {
         wrap.innerHTML = '<div class="muted">Belum ada pertanyaan aktif.</div>';
         prev.disabled = next.disabled = done.disabled = true;
         return;
       }
       const q = DATA[idx];
-      const labels = (q.opts && q.opts.length) ? q.opts : ['Tidak Pernah','Jarang','Sering','Sangat Sering'];
+      const labels = (q.opts && q.opts.length) ? q.opts : ['Tidak Pernah', 'Jarang', 'Sering', 'Sangat Sering'];
 
       let imgHtml = '';
-      if (q.img){
+      if (q.img) {
         imgHtml = `<div class="qimg"><img src="${q.img}" alt="Gambar pertanyaan"></div>`;
       }
 
       wrap.innerHTML = `
         <div class="muted">Pertanyaan</div>
-        <div class="qtext">${idx+1}. ${q.q}</div>
+        <div class="qtext">${idx + 1}. ${q.q}</div>
         ${imgHtml}
         <div class="opts">
-          ${labels.map((t,i)=>`
-            <label><input type="radio" name="opt" value="${i+1}"> ${t}</label>
+          ${labels.map((t, i) => `
+            <label><input type="radio" name="opt" value="${i + 1}"> ${t}</label>
           `).join('')}
         </div>
       `;
 
       // restore pilihan
       const v = answers[idx].v;
-      if (v != null){
+      if (v != null) {
         const el = wrap.querySelector('input[name="opt"][value="' + v + '"]');
         if (el) el.checked = true;
       }
 
       // progres & tombol
-      bar.style.width = (N === 1 ? 100 : Math.max(4, (idx/(N-1))*100)) + '%';
+      bar.style.width = (N === 1 ? 100 : Math.max(4, (idx / (N - 1)) * 100)) + '%';
       prev.disabled = (idx === 0);
-      next.hidden   = (idx === N - 1);
-      done.hidden   = (idx !== N - 1);
+      next.hidden = (idx === N - 1);
+      done.hidden = (idx !== N - 1);
     }
 
-    function readSel(){
+    function readSel() {
       const c = wrap.querySelector('input[name="opt"]:checked');
       return c ? parseInt(c.value, 10) : null;
     }
@@ -275,4 +350,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'fini
     render();
   </script>
 </body>
+
 </html>

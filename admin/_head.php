@@ -547,132 +547,382 @@ if (!isset($active))
         }
     </style>
 
-    
-
-<style>
-/* ====== Aesthetic table untuk Daftar Kuis ====== */
-.table.pretty {
-  width:100%;
-  border-collapse:separate;
-  border-spacing:0;
-  background:#fff;
-  border:1px solid var(--bd);
-  border-radius:16px;
-  overflow:hidden;
-  box-shadow:var(--shadow);
-}
-.table.pretty thead th{
-  position:sticky; top:0; z-index:1;
-  background:linear-gradient(180deg,#fff,#fff 60%,#fff8fc);
-  border-bottom:2px solid var(--bd);
-  font-weight:900; color:#111; padding:12px 14px; text-align:left;
-}
-.table.pretty td{
-  padding:14px; border-bottom:1px solid var(--bd);
-  vertical-align:top; color:#374151;
-}
-.table.pretty tbody tr:last-child td{border-bottom:0}
-.table.pretty tbody tr:hover{background:#fffafc}
-
-/* sel kecil / aksesori */
-.td-ico{width:72px}
-.emoji-badge{
-  width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
-  background:#fff;border:1px solid var(--bd); box-shadow:0 6px 14px rgba(236,72,153,.06);
-  font-size:18px;
-}
-.slug{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; color:#6b7280; font-size:.85rem}
-.badge{
-  display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 10px;
-  border-radius:999px; border:1px solid var(--bd); background:#fff; font-weight:800; color:#9c185b;
-}
-.tag{display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 10px; border-radius:999px; background:#fff5fb; border:1px solid #ffd6e9; font-weight:800}
-.tag.active{background:#eafff5;border-color:#c7f2d4;color:#0d7b4e}
-
-/* tombol */
-.btn{display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;border-radius:12px;border:1px solid var(--bd);background:#fff;font-weight:800;cursor:pointer}
-.btn:hover{filter:brightness(.98)}
-.btn.pink{background:var(--pink);border-color:var(--pink);color:#fff;box-shadow:0 8px 18px rgba(236,72,153,.16)}
-.btn.soft{background:#ffe7f2;color:#c21762}
-.btn.ghost{background:#fff;border:1px solid var(--bd);color:#111}
-
-/* sejajarkan aksi */
-.actions{white-space:nowrap}
-.row-actions{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}
-
-/* header kanan: jumlah item */
-.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.pill-count{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--bd);background:#fff;font-weight:800}
-.pill-count .dot{width:8px;height:8px;border-radius:50%;background:#ec4899}
-
-/* responsive kecil */
-@media (max-width:900px){
-  .table.pretty thead th:nth-child(4), .table.pretty td:nth-child(4){display:none}  /* sembunyikan 'Urutan' di mobile */
-}
-
-/* ====== Layout jarak antar section ====== */
-.section { margin-bottom: 28px; }
-.section + .section { margin-top: 28px; }
-
-/* ====== Aksi tombol seragam ====== */
-.btn { background: var(--pink); color:#fff; border:0; border-radius:14px; padding:10px 16px; font-weight:800; box-shadow:0 6px 14px rgba(236,72,153,.12); }
-.btn:hover{ filter:brightness(.98) }
-.btn.ghost{ background:#fff; color:#111; border:1px solid var(--bd) }
-.btn.pill{ height:36px; padding:0 14px; border-radius:999px; display:inline-flex; align-items:center; gap:6px }
-
-/* Tombol kecil untuk aksi tabel */
-.btn.sm{ height:32px; padding:0 12px; border-radius:12px }
-
-/* ====== Form Tambah Kuis Baru ====== */
-.form-actions{ display:flex; justify-content:flex-end; margin-top:12px }
-.card .field{ background:#fff; border:1px solid var(--bd); border-radius:14px; padding:12px 14px; box-shadow:var(--shadow) }
-
-/* ====== Tabel Daftar Kuis ====== */
-.quiz-table{ width:100%; border-collapse:separate; border-spacing:0; background:#fff; border:1px solid var(--bd); border-radius:18px; overflow:hidden; box-shadow:var(--shadow) }
-.quiz-table thead th{
-  position:sticky; top:0; z-index:1;
-  background:linear-gradient(180deg,#fff,#fff 60%, #fff8fc);
-  border-bottom:2px solid var(--bd); font-weight:900; color:#111; padding:12px 14px; text-align:left;
-}
-.quiz-table td{ padding:14px; border-bottom:1px solid var(--bd); vertical-align:middle }
-.quiz-table tr:last-child td{ border-bottom:0 }
-.quiz-table tbody tr:hover{ background:#fffafc }
-
-/* Kolom angka/badge kecil */
-.badge-round{ display:inline-flex; align-items:center; justify-content:center; min-width:34px; height:34px;
-  border-radius:999px; border:1px solid var(--bd); background:#fff; font-weight:900; color:#c21762 }
-
-/* Status bulat kecil */
-.chip{ display:inline-flex; align-items:center; height:28px; padding:0 10px; border-radius:999px; border:1px solid var(--bd); background:#fff }
-.chip.ok{ background:#eafff2; border-color:#c7f3d9; color:#137a40 }
-.chip.muted{ background:#fff; color:#6b7280 }
-
-/* Kolom aksi: tombol sejajar */
-.actions{ white-space:nowrap }
-.actions .grp{ display:flex; gap:10px; align-items:center }
-
-/* Header "Daftar Kuis" dengan badge jumlah */
-.section-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px }
-.count-badge{ display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 12px; border-radius:999px; background:#fff; border:1px solid var(--bd); color:#6b7280; font-weight:700 }
-
-/* Jarak lebih lega antar dua section utama di halaman */
-#quizzes-create { margin-bottom: 36px; }    /* form atas */
-#quizzes-list   { margin-top:  6px;  }      /* tabel bawah */
-
-/* Responsif: rapikan tombol saat layar sempit */
-@media (max-width: 900px){
-  .actions .grp{ flex-wrap:wrap }
-}
-
-/* Saat <details> Edit (di daftar kuis) terbuka, sembunyikan hanya tombol tertentu */
-.quiz-table .actions details[open] ~ .hide-on-edit,
-.quiz-table .actions details[open] ~ .js-kelola-soal,
-.quiz-table .actions details[open] ~ .js-hapus {
-  display: none !important;
-}
 
 
-</style>
+    <style>
+        /* ====== Aesthetic table untuk Daftar Kuis ====== */
+        .table.pretty {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #fff;
+            border: 1px solid var(--bd);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .table.pretty thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: linear-gradient(180deg, #fff, #fff 60%, #fff8fc);
+            border-bottom: 2px solid var(--bd);
+            font-weight: 900;
+            color: #111;
+            padding: 12px 14px;
+            text-align: left;
+        }
+
+        .table.pretty td {
+            padding: 14px;
+            border-bottom: 1px solid var(--bd);
+            vertical-align: top;
+            color: #374151;
+        }
+
+        .table.pretty tbody tr:last-child td {
+            border-bottom: 0
+        }
+
+        .table.pretty tbody tr:hover {
+            background: #fffafc
+        }
+
+        /* sel kecil / aksesori */
+        .td-ico {
+            width: 72px
+        }
+
+        .emoji-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            background: #fff;
+            border: 1px solid var(--bd);
+            box-shadow: 0 6px 14px rgba(236, 72, 153, .06);
+            font-size: 18px;
+        }
+
+        .slug {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            color: #6b7280;
+            font-size: .85rem
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid var(--bd);
+            background: #fff;
+            font-weight: 800;
+            color: #9c185b;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 26px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: #fff5fb;
+            border: 1px solid #ffd6e9;
+            font-weight: 800
+        }
+
+        .tag.active {
+            background: #eafff5;
+            border-color: #c7f2d4;
+            color: #0d7b4e
+        }
+
+        /* tombol */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 34px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: 1px solid var(--bd);
+            background: #fff;
+            font-weight: 800;
+            cursor: pointer
+        }
+
+        .btn:hover {
+            filter: brightness(.98)
+        }
+
+        .btn.pink {
+            background: var(--pink);
+            border-color: var(--pink);
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(236, 72, 153, .16)
+        }
+
+        .btn.soft {
+            background: #ffe7f2;
+            color: #c21762
+        }
+
+        .btn.ghost {
+            background: #fff;
+            border: 1px solid var(--bd);
+            color: #111
+        }
+
+        /* sejajarkan aksi */
+        .actions {
+            white-space: nowrap
+        }
+
+        .row-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: nowrap
+        }
+
+        /* header kanan: jumlah item */
+        .card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px
+        }
+
+        .pill-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 32px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid var(--bd);
+            background: #fff;
+            font-weight: 800
+        }
+
+        .pill-count .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ec4899
+        }
+
+        /* responsive kecil */
+        @media (max-width:900px) {
+
+            .table.pretty thead th:nth-child(4),
+            .table.pretty td:nth-child(4) {
+                display: none
+            }
+
+            /* sembunyikan 'Urutan' di mobile */
+        }
+
+        /* ====== Layout jarak antar section ====== */
+        .section {
+            margin-bottom: 28px;
+        }
+
+        .section+.section {
+            margin-top: 28px;
+        }
+
+        /* ====== Aksi tombol seragam ====== */
+        .btn {
+            background: var(--pink);
+            color: #fff;
+            border: 0;
+            border-radius: 14px;
+            padding: 10px 16px;
+            font-weight: 800;
+            box-shadow: 0 6px 14px rgba(236, 72, 153, .12);
+        }
+
+        .btn:hover {
+            filter: brightness(.98)
+        }
+
+        .btn.ghost {
+            background: #fff;
+            color: #111;
+            border: 1px solid var(--bd)
+        }
+
+        .btn.pill {
+            height: 36px;
+            padding: 0 14px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        /* Tombol kecil untuk aksi tabel */
+        .btn.sm {
+            height: 32px;
+            padding: 0 12px;
+            border-radius: 12px
+        }
+
+        /* ====== Form Tambah Kuis Baru ====== */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px
+        }
+
+        .card .field {
+            background: #fff;
+            border: 1px solid var(--bd);
+            border-radius: 14px;
+            padding: 12px 14px;
+            box-shadow: var(--shadow)
+        }
+
+        /* ====== Tabel Daftar Kuis ====== */
+        .quiz-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #fff;
+            border: 1px solid var(--bd);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: var(--shadow)
+        }
+
+        .quiz-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: linear-gradient(180deg, #fff, #fff 60%, #fff8fc);
+            border-bottom: 2px solid var(--bd);
+            font-weight: 900;
+            color: #111;
+            padding: 12px 14px;
+            text-align: left;
+        }
+
+        .quiz-table td {
+            padding: 14px;
+            border-bottom: 1px solid var(--bd);
+            vertical-align: middle
+        }
+
+        .quiz-table tr:last-child td {
+            border-bottom: 0
+        }
+
+        .quiz-table tbody tr:hover {
+            background: #fffafc
+        }
+
+        /* Kolom angka/badge kecil */
+        .badge-round {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            border: 1px solid var(--bd);
+            background: #fff;
+            font-weight: 900;
+            color: #c21762
+        }
+
+        /* Status bulat kecil */
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid var(--bd);
+            background: #fff
+        }
+
+        .chip.ok {
+            background: #eafff2;
+            border-color: #c7f3d9;
+            color: #137a40
+        }
+
+        .chip.muted {
+            background: #fff;
+            color: #6b7280
+        }
+
+        /* Kolom aksi: tombol sejajar */
+        .actions {
+            white-space: nowrap
+        }
+
+        .actions .grp {
+            display: flex;
+            gap: 10px;
+            align-items: center
+        }
+
+        /* Header "Daftar Kuis" dengan badge jumlah */
+        .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px
+        }
+
+        .count-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: 999px;
+            background: #fff;
+            border: 1px solid var(--bd);
+            color: #6b7280;
+            font-weight: 700
+        }
+
+        /* Jarak lebih lega antar dua section utama di halaman */
+        #quizzes-create {
+            margin-bottom: 36px;
+        }
+
+        /* form atas */
+        #quizzes-list {
+            margin-top: 6px;
+        }
+
+        /* tabel bawah */
+
+        /* Responsif: rapikan tombol saat layar sempit */
+        @media (max-width: 900px) {
+            .actions .grp {
+                flex-wrap: wrap
+            }
+        }
+
+        /* Saat <details> Edit (di daftar kuis) terbuka, sembunyikan hanya tombol tertentu */
+        .quiz-table .actions details[open]~.hide-on-edit,
+        .quiz-table .actions details[open]~.js-kelola-soal,
+        .quiz-table .actions details[open]~.js-hapus {
+            display: none !important;
+        }
+    </style>
 
 
 </head>

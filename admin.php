@@ -364,7 +364,8 @@ if ($res3 = $mysqli->query("SELECT id, question_text, category, is_active, DATE_
               <select class="inp" name="edit_category" required>
                 <option value="self_esteem" <?= ($edit['category'] ?? '') === 'self_esteem' ? 'selected' : '' ?>>Self-Esteem
                 </option>
-                <option value="social_anxiety" <?= ($edit['category'] ?? '') === 'social_anxiety' ? 'selected' : '' ?>>Kecemasan
+                <option value="social_anxiety" <?= ($edit['category'] ?? '') === 'social_anxiety' ? 'selected' : '' ?>>
+                  Kecemasan
                   Sosial</option>
               </select>
             </label>
