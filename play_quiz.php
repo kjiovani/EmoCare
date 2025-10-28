@@ -151,21 +151,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'fini
     $note = 'Pertimbangkan konselor/psikolog. Bila ada pikiran menyakiti diri, cari bantuan darurat.';
   }
 
-  // simpan attempts
-  $ins = $mysqli->prepare("INSERT INTO quiz_attempts (pengguna_id, category, score, label, notes)
-                           VALUES (?,?,?,?,?)");
-  // i s d s s  → score numeric lebih aman sebagai double/decimal
-  $ins->bind_param('isdss', $uid, $catPost, $scorePct, $label, $note);
-  $ok = $ins->execute();
-  $attemptId = (int) $ins->insert_id;
-  $ins->close();
 
-  if ($ok && $attemptId > 0) {
-    header('Location: quiz_result.php?attempt=' . $attemptId, true, 303);
-    exit;
+
+  /* ===== simpan hasil kuis ===== */
+  function save_quiz_result(mysqli $db, int $uid, string $cat, int $score, int $total): int
+  {
+    // cegah duplikat karena refresh ganda (5 menit terakhir dianggap sama)
+    $ins = $db->prepare("
+    INSERT INTO quiz_result(pengguna_id, category, score, total, finished_at)
+    SELECT ?, ?, ?, ?, NOW()
+    FROM DUAL
+    WHERE NOT EXISTS (
+      SELECT 1 FROM quiz_result
+      WHERE pengguna_id=? AND category=? AND finished_at >= NOW() - INTERVAL 5 MINUTE
+    )
+  ");
+    $ins->bind_param('isiiss', $uid, $cat, $score, $total, $uid, $cat);
+    $ins->execute();
+    $rid = $db->insert_id;     // kalau 0 artinya barusan dianggap duplikat
+    $ins->close();
+
+    if (!$rid) {
+      // ambil attempt terakhir user utk kategori ini
+      $st = $db->prepare("SELECT id FROM quiz_result WHERE pengguna_id=? AND category=? ORDER BY finished_at DESC LIMIT 1");
+      $st->bind_param('is', $uid, $cat);
+      $st->execute();
+      $rid = (int) ($st->get_result()->fetch_column() ?? 0);
+      $st->close();
+    }
+    return $rid;
   }
-  header('Location: home.php?err=save');
+
+  /* ===== panggil setelah penilaian selesai ===== */
+  // $uid  = (int)$_SESSION['user']['pengguna_id'];   // sudah ada di file kamu
+// $cat  = 'self_esteem' (contoh);                   // slug kategori aktif
+// $score, $total                                     // sudah kamu hitung
+  $rid = save_quiz_result($mysqli, $uid, $cat, (int) $score, (int) $total);
+
+  /* ===== arahkan ke halaman hasil ===== */
+  header('Location: quiz_result.php?id=' . $rid);
   exit;
+
+
+
 }
 ?>
 <!doctype html>

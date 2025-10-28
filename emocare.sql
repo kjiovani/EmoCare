@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 28 Okt 2025 pada 12.16
+-- Waktu pembuatan: 28 Okt 2025 pada 22.27
 -- Versi server: 10.4.32-MariaDB
 -- Versi PHP: 8.2.12
 
@@ -117,7 +117,10 @@ INSERT INTO `quiz_attempts` (`id`, `pengguna_id`, `category`, `score`, `label`, 
 (6, 10, 'self_tes', 100.00, 'Mental Sehat', 'Kondisi emosional stabil & adaptif. Pertahankan kebiasaan baik.', '2025-10-27 03:53:04'),
 (7, 10, 'self_tes', 100.00, 'Mental Sehat', 'Kondisi emosional stabil & adaptif. Pertahankan kebiasaan baik.', '2025-10-27 04:03:08'),
 (8, 10, 'self_tes', 0.00, 'Depresi Berat', 'Pertimbangkan konselor/psikolog. Bila ada pikiran menyakiti diri, cari bantuan darurat.', '2025-10-27 04:03:59'),
-(9, 10, 'self_tes', 100.00, 'Mental Sehat', 'Kondisi emosional stabil & adaptif. Pertahankan kebiasaan baik.', '2025-10-27 04:04:11');
+(9, 10, 'self_tes', 100.00, 'Mental Sehat', 'Kondisi emosional stabil & adaptif. Pertahankan kebiasaan baik.', '2025-10-27 04:04:11'),
+(10, 10, 'self_tes', 100.00, 'Mental Sehat', 'Kondisi emosional stabil & adaptif. Pertahankan kebiasaan baik.', '2025-10-28 16:03:29'),
+(11, 10, 'self_tes', 100.00, 'Mental Sehat', 'Kondisi emosional stabil & adaptif. Pertahankan kebiasaan baik.', '2025-10-28 16:12:57'),
+(12, 10, 'self_tes', 100.00, 'Mental Sehat', 'Kondisi emosional stabil & adaptif. Pertahankan kebiasaan baik.', '2025-10-28 16:13:01');
 
 -- --------------------------------------------------------
 
@@ -223,6 +226,32 @@ INSERT INTO `quiz_questions` (`id`, `question_text`, `image_path`, `is_active`, 
 -- --------------------------------------------------------
 
 --
+-- Struktur dari tabel `quiz_result`
+--
+
+CREATE TABLE `quiz_result` (
+  `id` int(11) NOT NULL,
+  `pengguna_id` int(11) NOT NULL,
+  `category` varchar(100) NOT NULL,
+  `score` int(11) DEFAULT NULL,
+  `total` int(11) DEFAULT NULL,
+  `finished_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data untuk tabel `quiz_result`
+--
+
+INSERT INTO `quiz_result` (`id`, `pengguna_id`, `category`, `score`, `total`, `finished_at`) VALUES
+(1, 10, 'self_tes', NULL, NULL, '2025-10-28 23:24:28'),
+(2, 10, 'self_tes', 0, 0, '2025-10-28 23:31:06'),
+(3, 10, 'self_tes', 0, 0, '2025-10-28 23:38:14'),
+(4, 10, 'self_esteem', 0, 0, '2025-10-28 23:38:38'),
+(5, 10, 'self_esteem', 0, 0, '2025-10-29 00:15:15');
+
+-- --------------------------------------------------------
+
+--
 -- Struktur dari tabel `reminders`
 --
 
@@ -313,6 +342,15 @@ ALTER TABLE `quiz_questions`
   ADD KEY `idx_qq_category` (`category`);
 
 --
+-- Indeks untuk tabel `quiz_result`
+--
+ALTER TABLE `quiz_result`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `pengguna_id` (`pengguna_id`),
+  ADD KEY `category` (`category`),
+  ADD KEY `finished_at` (`finished_at`);
+
+--
 -- Indeks untuk tabel `reminders`
 --
 ALTER TABLE `reminders`
@@ -345,7 +383,7 @@ ALTER TABLE `pengguna`
 -- AUTO_INCREMENT untuk tabel `quiz_attempts`
 --
 ALTER TABLE `quiz_attempts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT untuk tabel `quiz_list`
@@ -364,6 +402,12 @@ ALTER TABLE `quiz_options`
 --
 ALTER TABLE `quiz_questions`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+
+--
+-- AUTO_INCREMENT untuk tabel `quiz_result`
+--
+ALTER TABLE `quiz_result`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT untuk tabel `reminders`

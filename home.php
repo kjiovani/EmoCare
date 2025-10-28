@@ -5,7 +5,7 @@ require_login();
 /* --- identitas & role --- */
 $uid = (int) ($_SESSION['user']['pengguna_id'] ?? 0);
 $nama = $_SESSION['user']['nama'] ?? 'Pengguna';
-$isAdmin = false;
+
 $stmt = $mysqli->prepare("SELECT role FROM pengguna WHERE pengguna_id=? LIMIT 1");
 $stmt->bind_param('i', $uid);
 $stmt->execute();
@@ -20,21 +20,120 @@ $quizzes = [];
 $sql = "
   SELECT l.id, l.name, l.slug, l.icon,
          COALESCE(l.description,'') AS description,
-         COALESCE((
-           SELECT COUNT(*) FROM quiz_questions q WHERE q.category = l.slug
-         ),0) AS total_q,
-         COALESCE((
-           SELECT COUNT(*) FROM quiz_questions q WHERE q.category = l.slug AND q.is_active = 1
-         ),0) AS active_q
+         COALESCE((SELECT COUNT(*) FROM quiz_questions q WHERE q.category=l.slug),0) AS total_q,
+         COALESCE((SELECT COUNT(*) FROM quiz_questions q WHERE q.category=l.slug AND q.is_active=1),0) AS active_q
   FROM quiz_list l
-  WHERE l.is_active = 1
+  WHERE l.is_active=1
   ORDER BY l.sort_order ASC, l.id ASC
 ";
 if ($res = $mysqli->query($sql)) {
   $quizzes = $res->fetch_all(MYSQLI_ASSOC);
 }
 
-/* --- flash & handlers Mood Tracker --- */
+/* =========================================================
+   Rekapan Bulanan Mood Tracker (tanpa ubah skema database)
+   - Tabel: moodtracker (mood_id, tanggal, mood_level, catatan)
+   - KPI: avg, total entri, hari aktif
+   - Distribusi + Insight (mode, standar deviasi, komposisi)
+========================================================= */
+function ym_bounds(string $ym): array
+{
+  $start = $ym . '-01';
+  $end = date('Y-m-t', strtotime($start));
+  return [$start, $end];
+}
+
+function get_month_recap(mysqli $db, int $uid, string $ym): array
+{
+  [$start, $end] = ym_bounds($ym);
+
+  // Agg inti + avg2 untuk standar deviasi
+  $st = $db->prepare("
+    SELECT COUNT(*) c,
+           AVG(mood_level) a,
+           MIN(mood_level) mi,
+           MAX(mood_level) ma,
+           AVG(mood_level*mood_level) a2
+    FROM moodtracker
+    WHERE pengguna_id=? AND tanggal BETWEEN ? AND ?
+  ");
+  $st->bind_param('iss', $uid, $start, $end);
+  $st->execute();
+  $agg = $st->get_result()->fetch_assoc() ?: ['c' => 0, 'a' => null, 'mi' => null, 'ma' => null, 'a2' => null];
+  $st->close();
+
+  // Hari aktif (distinct tanggal)
+  $st = $db->prepare("SELECT COUNT(DISTINCT tanggal) d FROM moodtracker WHERE pengguna_id=? AND tanggal BETWEEN ? AND ?");
+  $st->bind_param('iss', $uid, $start, $end);
+  $st->execute();
+  $days_active = (int) ($st->get_result()->fetch_column() ?? 0);
+  $st->close();
+
+  // Distribusi 1..5
+  $dist = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
+  $st = $db->prepare("
+    SELECT mood_level, COUNT(*) ct
+    FROM moodtracker
+    WHERE pengguna_id=? AND tanggal BETWEEN ? AND ?
+    GROUP BY mood_level
+  ");
+  $st->bind_param('iss', $uid, $start, $end);
+  $st->execute();
+  $rs = $st->get_result();
+  while ($row = $rs->fetch_assoc()) {
+    $lvl = (int) $row['mood_level'];
+    if ($lvl >= 1 && $lvl <= 5)
+      $dist[$lvl] = (int) $row['ct'];
+  }
+  $st->close();
+
+  // Mode (paling dominan) – tie-break: yang paling dekat rata-rata
+  $mode = null;
+  $modeCt = -1;
+  $avgFloat = (float) ($agg['a'] ?? 0);
+  foreach ($dist as $lvl => $ct) {
+    if ($ct > $modeCt || ($ct === $modeCt && abs($lvl - $avgFloat) < abs(($mode ?? $lvl) - $avgFloat))) {
+      $mode = $lvl;
+      $modeCt = $ct;
+    }
+  }
+
+  // Standar deviasi
+  $sd = null;
+  if (!is_null($agg['a2']) && !is_null($agg['a']) && (int) $agg['c'] > 1) {
+    $sd = sqrt(max(0, (float) $agg['a2'] - ((float) $agg['a'] * (float) $agg['a'])));
+    $sd = round($sd, 2);
+  }
+
+  return [
+    'ym' => $ym,
+    'label' => date('F Y', strtotime($start)),
+    'start' => $start,
+    'end' => $end,
+    'total' => (int) $agg['c'],
+    'avg' => is_null($agg['a']) ? null : round((float) $agg['a'], 2),
+    'min' => is_null($agg['mi']) ? null : (int) $agg['mi'],
+    'max' => is_null($agg['ma']) ? null : (int) $agg['ma'],
+    'days_active' => $days_active,
+    'days_total' => (int) date('t', strtotime($start)),
+    'dist' => $dist,
+    'mode' => $mode,
+    'sd' => $sd,
+  ];
+}
+
+/* Resolve bulan */
+$ymParam = trim($_GET['month'] ?? '');
+$ym = preg_match('/^\d{4}\-\d{2}$/', $ymParam) ? $ymParam : date('Y-m');
+$recap = get_month_recap($mysqli, $uid, $ym);
+
+/* Navigasi bulan */
+$ymTime = strtotime($ym . '-01');
+$prevYm = date('Y-m', strtotime('-1 month', $ymTime));
+$nextYm = date('Y-m', strtotime('+1 month', $ymTime));
+$nextIsFuture = (strtotime($nextYm . '-01') > strtotime(date('Y-m-01')));
+
+/* --- Handlers Mood Tracker --- */
 $flash = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'create')) {
   $mood = (int) ($_POST['mood_level'] ?? 0);
@@ -42,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'crea
   if ($mood < 1 || $mood > 5) {
     $flash = 'Skala mood harus 1..5';
   } else {
-    $stmt = $mysqli->prepare("INSERT INTO moodtracker (pengguna_id, tanggal, mood_level, catatan) VALUES (?, CURDATE(), ?, ?)");
+    $stmt = $mysqli->prepare("INSERT INTO moodtracker(pengguna_id,tanggal,mood_level,catatan) VALUES(?,CURDATE(),?,?)");
     $stmt->bind_param('iis', $uid, $mood, $note);
     if ($stmt->execute()) {
       header('Location: home.php?saved=1');
@@ -67,9 +166,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'dele
     $stmt->close();
     header('Location: home.php?deleted=1#top');
     exit;
-  } else {
+  } else
     $flash = 'Pilih minimal satu baris untuk dihapus.';
-  }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'edit')) {
@@ -91,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'edit
   }
 }
 
-/* --- ambil riwayat mood (dengan pencarian sederhana) --- */
+/* --- ambil riwayat mood --- */
 $items = [];
 $s = trim($_GET['s'] ?? '');
 $conds = ['pengguna_id = ?'];
@@ -114,6 +212,98 @@ $res = $q->get_result();
 while ($row = $res->fetch_assoc())
   $items[] = $row;
 $q->close();
+
+// ==== Statistik tambahan: streak & rata-rata keseluruhan ====
+$streak = 0;
+// ambil tanggal unik (maks 120 hari ke belakang)
+$__st = $mysqli->prepare("SELECT DISTINCT tanggal FROM moodtracker WHERE pengguna_id=? AND tanggal <= CURDATE() ORDER BY tanggal DESC LIMIT 120");
+$__st->bind_param('i', $uid);
+$__st->execute();
+$__rs = $__st->get_result();
+$__dates = [];
+while ($__row = $__rs->fetch_assoc()) {
+  $__dates[$__row['tanggal']] = true;
+}
+$__st->close();
+// hitung streak mundur dari hari ini
+$__cur = new DateTimeImmutable('today');
+while (isset($__dates[$__cur->format('Y-m-d')])) {
+  $streak++;
+  $__cur = $__cur->modify('-1 day');
+}
+
+// rata-rata keseluruhan (untuk tile)
+$avgOverall = 0;
+if ($items) {
+  $sum = 0;
+  foreach ($items as $it)
+    $sum += (int) $it['mood_level'];
+  $avgOverall = round($sum / count($items), 2);
+}
+
+/* ============================
+   Kuis Selesai untuk Statistik
+   - Menghitung DISTINCT kategori yang sudah selesai
+   - Adaptif: cek beberapa nama tabel umum
+============================ */
+function table_exists(mysqli $db, string $name): bool
+{
+  $st = $db->prepare("SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name=?");
+  $st->bind_param('s', $name);
+  $st->execute();
+  $ok = (bool) ($st->get_result()->fetch_column() ?? 0);
+  $st->close();
+  return $ok;
+}
+
+/* hitung kuis selesai (lifetime) */
+function count_quiz_done(mysqli $db, int $uid): int
+{
+  // kandidat tabel & kondisi “selesai”
+  $candidates = [
+    // rekomendasi/standar
+    ['quiz_result', 'finished_at IS NOT NULL', true],   // true => hitung DISTINCT category
+    // alternatif nama skema
+    ['quiz_results', 'finished_at IS NOT NULL', true],
+    ['quiz_sessions', 'finished_at IS NOT NULL', true],
+    ['quiz_attempts', '(status="finished" OR status="done" OR is_finished=1)', true],
+  ];
+
+  foreach ($candidates as [$tbl, $cond, $distinctCat]) {
+    if (table_exists($db, $tbl)) {
+      $sql = $distinctCat
+        ? "SELECT COUNT(DISTINCT category) FROM `$tbl` WHERE pengguna_id=? AND ($cond)"
+        : "SELECT COUNT(*) FROM `$tbl` WHERE pengguna_id=? AND ($cond)";
+      $st = $db->prepare($sql);
+      $st->bind_param('i', $uid);
+      $st->execute();
+      $n = (int) ($st->get_result()->fetch_column() ?? 0);
+      $st->close();
+      return $n;
+    }
+  }
+  return 0;
+}
+
+$quizDone = count_quiz_done($mysqli, $uid);
+
+/* Kalau mau “BULAN INI”, ganti dengan:
+$ymNow = date('Y-m');
+$quizDone = 0;
+if (table_exists($mysqli,'quiz_result')) {
+  $st = $mysqli->prepare("
+    SELECT COUNT(DISTINCT category)
+    FROM quiz_result
+    WHERE pengguna_id=? AND DATE_FORMAT(finished_at,'%Y-%m')=?
+  ");
+  $st->bind_param('is', $uid, $ymNow);
+  $st->execute();
+  $quizDone = (int)($st->get_result()->fetch_column() ?? 0);
+  $st->close();
+}
+*/
+
+
 ?>
 <!doctype html>
 <html lang="id">
@@ -130,7 +320,6 @@ $q->close();
       background: linear-gradient(135deg, #ffe0ea 0%, #e7dcff 50%, #dfe9ff 100%)
     }
 
-    /* ====== Kuis Psikologi (grid) ====== */
     .quiz-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -145,7 +334,7 @@ $q->close();
       border: 1px solid var(--bd);
       border-radius: 18px;
       padding: 16px;
-      box-shadow: var(--shadow);
+      box-shadow: var(--shadow)
     }
 
     .quiz-ico {
@@ -157,11 +346,7 @@ $q->close();
       place-items: center;
       font-size: 22px;
       background: linear-gradient(180deg, #ffe7f2, #fff);
-      border: 1px solid var(--bd);
-    }
-
-    .quiz-body {
-      flex: 1
+      border: 1px solid var(--bd)
     }
 
     .quiz-name {
@@ -174,25 +359,6 @@ $q->close();
       color: #6b7280;
       line-height: 1.5;
       margin-bottom: 10px
-    }
-
-    .quiz-meta {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap
-    }
-
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: #fff;
-      border: 1px solid var(--bd);
-      font-weight: 700;
-      color: #c21762;
     }
 
     .btn {
@@ -217,7 +383,6 @@ $q->close();
       border: 1px solid #f9a8d4
     }
 
-    /* tabel riwayat dsb (sudah ada pada css utama, hanya pelengkap kecil) */
     .empty {
       padding: 18px;
       border: 1px dashed #f4cadd;
@@ -225,12 +390,322 @@ $q->close();
       background: linear-gradient(180deg, #fff, #fff 70%, #fff8fc);
       color: #6b7280;
       text-align: center;
-      font-weight: 600;
+      font-weight: 600
     }
 
-    /* Sembunyikan info "soal aktif" untuk pengguna biasa */
     .role-user .qp-meta {
-      display: none !important;
+      display: none !important
+    }
+
+    /* ===== Rekapan: clean + fokus ===== */
+    .recap-card {
+      margin: 16px 0;
+      padding: 20px 22px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .88), rgba(255, 255, 255, .72));
+      border: 1px solid rgba(236, 72, 153, .12);
+      box-shadow: 0 10px 24px rgba(99, 102, 241, .08);
+      backdrop-filter: saturate(1.05) blur(8px);
+    }
+
+    .recap-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .recap-title {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 900;
+      color: #0f172a
+    }
+
+    .pill-month {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #f4cadd;
+      font-weight: 800;
+      color: #be185d
+    }
+
+    .recap-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap
+    }
+
+    .ec-btn {
+      background: #f472b6;
+      color: #fff;
+      padding: 9px 12px;
+      border-radius: 12px;
+      border: 0;
+      font-weight: 800
+    }
+
+    .ec-btn-outline {
+      background: #fff;
+      color: #be185d;
+      border: 1px solid #f9a8d4;
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-weight: 800
+    }
+
+    .ec-btn[disabled] {
+      opacity: .5;
+      cursor: not-allowed
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px
+    }
+
+    .kpi {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, .06);
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, .04)
+    }
+
+    .kpi .k {
+      font-size: 12px;
+      color: #6b7280
+    }
+
+    .kpi .v {
+      font-weight: 900;
+      font-size: 22px;
+      line-height: 1.1;
+      margin-top: 2px
+    }
+
+    /* Distribusi & insight */
+    .dist-wrap {
+      margin-top: 12px
+    }
+
+    .dist-head {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px
+    }
+
+    .legend {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap
+    }
+
+    .legend .chip {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      color: #6b7280
+    }
+
+    .dist-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0
+    }
+
+    .dist-row .idx {
+      width: 24px;
+      text-align: right;
+      font-weight: 700;
+      color: #374151
+    }
+
+    .dist-row .bar {
+      flex: 1;
+      height: 12px;
+      background: #f1f5f9;
+      border-radius: 999px;
+      overflow: hidden
+    }
+
+    .dist-row .bar>span {
+      display: block;
+      height: 12px;
+      background: linear-gradient(90deg, #f472b6, #6366f1)
+    }
+
+    .dist-row .val {
+      width: 80px;
+      text-align: right;
+      color: #6b7280;
+      font-weight: 600
+    }
+
+    .insight {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px
+    }
+
+    .insight .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      font-weight: 700
+    }
+
+    .pill.warn {
+      border-color: #fde68a;
+      background: #fffbeb;
+      color: #92400e
+    }
+
+    .pill.good {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+      color: #065f46
+    }
+
+    .pill.info {
+      border-color: #c7d2fe;
+      background: #eef2ff;
+      color: #3730a3
+    }
+
+    .note {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #fde68a;
+      background: #fffbeb;
+      color: #92400e;
+      font-size: 14px
+    }
+
+    .note.good {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+      color: #065f46
+    }
+
+    .recap-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 10px
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 13px
+    }
+
+    .range {
+      font-weight: 800;
+      color: #334155
+    }
+
+    /* PRINT: hanya kartu rekapan yang dicetak */
+    @media print {
+      body * {
+        visibility: hidden !important
+      }
+
+      #mood-recap,
+      #mood-recap * {
+        visibility: visible !important
+      }
+
+      #mood-recap {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 24px;
+        box-shadow: none;
+        border: 0
+      }
+
+      .no-print {
+        display: none !important
+      }
+    }
+
+    /* ===== Statistik & Progress (grid rapi 4 kolom) ===== */
+    .ec-tiles {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+      /* mobile default */
+    }
+
+    /* ≥640px: 2 kolom */
+    @media (min-width:640px) {
+      .ec-tiles {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* ≥900px: 3 kolom */
+    @media (min-width:900px) {
+      .ec-tiles {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    /* ≥1200px: 4 kolom (sejajar) */
+    @media (min-width:1200px) {
+      .ec-tiles {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .ec-tile {
+      background: #fff;
+      border: 1px solid rgba(15, 23, 42, .06);
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, .06);
+
+      /* bikin tinggi konsisten & konten center */
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .ec-tile .k {
+      font-size: 14px;
+      color: #64748b
+    }
+
+    .ec-tile .v {
+      font-size: 26px;
+      font-weight: 900;
+      margin-top: 6px;
+      color: #0f172a
     }
   </style>
 </head>
@@ -275,10 +750,9 @@ $q->close();
       </div>
     </section>
 
-    <!-- KUIS PSIKOLOGI: auto dari quiz_list -->
+    <!-- KUIS PSIKOLOGI -->
     <section class="ec-card" id="quiz-cards">
       <h2 class="ec-section-title">Kuis Psikologi</h2>
-
       <?php if (empty($quizzes)): ?>
         <div class="empty">Belum ada kuis aktif. Admin dapat menambahkannya di Kelola Kuis.</div>
       <?php else: ?>
@@ -291,26 +765,126 @@ $q->close();
                 <?php if (!empty($q['description'])): ?>
                   <div class="quiz-desc"><?= htmlspecialchars($q['description']) ?></div>
                 <?php endif; ?>
-                <div class="quiz-meta">
-                  <?php if ($isAdmin): ?>
-                    <span class="chip"><?= (int) $q['active_q'] ?>/<?= (int) $q['total_q'] ?> soal aktif</span>
-                  <?php endif; ?>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                  <?php if ($isAdmin): ?><span class="pill-month"><?= (int) $q['active_q'] ?>/<?= (int) $q['total_q'] ?>
+                      aktif</span><?php endif; ?>
                   <?php if ((int) $q['active_q'] > 0): ?>
                     <a class="btn" href="play_quiz.php?cat=<?= urlencode($q['slug']) ?>">Mulai Kuis</a>
-                  <?php else: ?>
-                    <button class="btn" disabled>Belum ada soal</button>
-                  <?php endif; ?>
+                  <?php else: ?><button class="btn" disabled>Belum ada soal</button><?php endif; ?>
                 </div>
               </div>
             </article>
           <?php endforeach; ?>
         </div>
       <?php endif; ?>
+      <div style="margin-top:12px; display:flex; justify-content:flex-end;">
+        <a class="btn ghost" href="quiz_history.php">Riwayat Hasil Kuis »</a>
+      </div>
+    </section>
+
+    <!-- ===== REKAPAN BULANAN ===== -->
+    <section class="ec-card recap-card" id="mood-recap" data-label="<?= htmlspecialchars($recap['label']) ?>">
+      <div class="recap-header">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <h2 class="recap-title">Rekapan Bulanan</h2>
+          <span class="pill-month">📅 <?= htmlspecialchars($recap['label']) ?></span>
+        </div>
+        <div class="recap-actions">
+          <a class="ec-btn-outline" href="home.php?month=<?= htmlspecialchars($prevYm) ?>">« Bulan Sebelumnya</a>
+          <form id="monthForm" action="home.php" method="get" class="no-print"
+            style="display:flex;gap:8px;align-items:center">
+            <input id="monthSelect" type="month" name="month" value="<?= htmlspecialchars($ym) ?>"
+              style="padding:8px;border:1px solid #ddd;border-radius:10px">
+          </form>
+          <a class="ec-btn-outline <?= $nextIsFuture ? 'disabled' : '' ?>"
+            href="<?= $nextIsFuture ? '#' : ('home.php?month=' . htmlspecialchars($nextYm)) ?>"
+            style="<?= $nextIsFuture ? 'pointer-events:none;opacity:.5;' : '' ?>">Bulan Berikutnya »</a>
+          <button type="button" class="ec-btn-outline" onclick="window.print()">Unduh PDF</button>
+        </div>
+      </div>
+
+      <?php if ($recap['total'] === 0): ?>
+        <p class="muted" style="margin-top:10px">Belum ada data untuk
+          <strong><?= htmlspecialchars($recap['label']) ?></strong>.
+        </p>
+      <?php else: ?>
+        <!-- KPI ringkas -->
+        <div class="kpis">
+          <div class="kpi">
+            <div class="k">Rata-rata</div>
+            <div class="v"><?= $recap['avg'] === null ? '–' : number_format((float) $recap['avg'], 2) ?></div>
+          </div>
+          <div class="kpi">
+            <div class="k">Entri</div>
+            <div class="v"><?= (int) $recap['total'] ?></div>
+          </div>
+          <div class="kpi">
+            <div class="k">Hari Aktif</div>
+            <div class="v"><?= (int) $recap['days_active'] ?>/<?= (int) $recap['days_total'] ?></div>
+          </div>
+        </div>
+
+        <!-- Distribusi + Insight -->
+        <?php
+        $MOOD_LABEL = [1 => 'Senang Banget', 2 => 'Senang', 3 => 'Biasa', 4 => 'Cemas', 5 => 'Stress'];
+        $total = max(1, (int) $recap['total']);
+        $pos = round((($recap['dist'][1] + $recap['dist'][2]) * 100) / $total);
+        $net = round(($recap['dist'][3] * 100) / $total);
+        $neg = round((($recap['dist'][4] + $recap['dist'][5]) * 100) / $total);
+        ?>
+        <div class="dist-wrap">
+          <div class="dist-head">
+            <div>Distribusi Mood</div>
+            <div class="legend">
+              <span class="chip">1 = Senang Banget</span>
+              <span class="chip">2 = Senang</span>
+              <span class="chip">3 = Biasa</span>
+              <span class="chip">4 = Cemas</span>
+              <span class="chip">5 = Stress</span>
+            </div>
+          </div>
+
+          <?php for ($i = 1; $i <= 5; $i++):
+            $cnt = (int) $recap['dist'][$i];
+            $pct = round($cnt * 100 / $total);
+            ?>
+            <div class="dist-row">
+              <div class="idx"><?= $i ?></div>
+              <div class="bar"><span style="width:<?= $pct ?>%"></span></div>
+              <div class="val"><?= $cnt ?> (<?= $pct ?>%)</div>
+            </div>
+          <?php endfor; ?>
+
+          <div class="insight">
+            <span class="pill info">Dominan: <?= (int) $recap['mode'] ?> •
+              <?= $MOOD_LABEL[(int) $recap['mode']] ?? '' ?></span>
+            <?php if (!is_null($recap['sd'])): ?>
+              <span class="pill <?= ($recap['sd'] >= 1.2 ? 'warn' : 'good') ?>">Variasi:
+                <?= ($recap['sd'] >= 1.2 ? 'Fluktuatif' : 'Stabil') ?> (SD <?= number_format($recap['sd'], 2) ?>)</span>
+            <?php endif; ?>
+            <span class="pill">Komposisi: Positif <?= $pos ?>% • Netral <?= $net ?>% • Negatif <?= $neg ?>%</span>
+          </div>
+
+          <?php if ($recap['avg'] !== null && $recap['avg'] < 3): ?>
+            <div class="note"><strong>Catatan:</strong> rata-rata cenderung rendah. Coba rutinkan self-care (tidur cukup,
+              journaling 5 menit, jalan sore, batasi screen-time).</div>
+          <?php elseif ($recap['avg'] !== null && $recap['avg'] >= 4): ?>
+            <div class="note good"><strong>Nice!</strong> Mood konsisten baik. Pertahankan kebiasaan yang terasa membantu.
+            </div>
+          <?php endif; ?>
+        </div>
+
+        <!-- Periode & Range -->
+        <div class="recap-foot">
+          <div class="muted">Periode: <?= htmlspecialchars($recap['start']) ?> – <?= htmlspecialchars($recap['end']) ?>
+          </div>
+          <div class="range">Range: ↑ <?= (int) $recap['max'] ?> • ↓ <?= (int) $recap['min'] ?></div>
+        </div>
+      <?php endif; ?>
     </section>
 
     <!-- Mood Tracker -->
     <section id="mood-tracker" class="ec-mood-grid">
-      <!-- Form -->
       <article class="card ec-mood-card">
         <div class="card-bar">
           <div class="bar-dot"></div>
@@ -354,7 +928,6 @@ $q->close();
         </form>
       </article>
 
-      <!-- Riwayat -->
       <article class="card ec-history-card">
         <div class="card-bar">
           <div class="bar-dot"></div>
@@ -434,7 +1007,6 @@ $q->close();
       </article>
     </section>
 
-    <!-- Statistik ringkas -->
     <section id="stats" class="ec-card">
       <h2 class="ec-section-title">Statistik &amp; Progress</h2>
       <div class="ec-tiles">
@@ -444,38 +1016,39 @@ $q->close();
         </div>
         <div class="ec-tile">
           <div class="k">Streak Harian</div>
-          <div class="v" id="tileStreak">0 hari</div>
+          <div class="v"><?= $streak ?> hari</div>
         </div>
         <div class="ec-tile">
           <div class="k">Rata-rata Mood</div>
-          <div class="v">
-            <?php
-            if ($items) {
-              $sum = 0;
-              foreach ($items as $it)
-                $sum += (int) $it['mood_level'];
-              echo round($sum / count($items), 2) . '/5';
-            } else
-              echo '0/5';
-            ?>
-          </div>
+          <div class="v"><?= $avgOverall ?>/5</div>
         </div>
+        <?php
+        $activeQuizCount = 0;
+        foreach ($quizzes as $q)
+          if ((int) $q['active_q'] > 0)
+            $activeQuizCount++;
+        ?>
         <div class="ec-tile">
           <div class="k">Kuis Selesai</div>
-          <div class="v" id="tileQuizDone">0</div>
+          <div class="v"><?= (int) $quizDone ?><?= $activeQuizCount ? '/' . $activeQuizCount : '' ?></div>
         </div>
       </div>
     </section>
+
   </main>
 
   <script>
     // Jam & ucapan sederhana
-    const clock = document.getElementById('greetClock'), word = document.getElementById('greetTimeWord');
+    const clock = document.getElementById('greetClock'),
+      word = document.getElementById('greetTimeWord');
     function tick() {
       const d = new Date();
       clock.textContent = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       const h = d.getHours(); word.textContent = (h < 11) ? 'Pagi' : (h < 15) ? 'Siang' : (h < 18) ? 'Sore' : 'Malam';
     } tick(); setInterval(tick, 30000);
+
+    // Auto-submit saat bulan diganti
+    document.getElementById('monthSelect')?.addEventListener('change', e => e.target.form.submit());
   </script>
 
   <script>
@@ -502,7 +1075,10 @@ $q->close();
         refresh();
       });
       document.addEventListener('change', e => {
-        if (e.target?.classList.contains('rowchk')) { if (!e.target.checked && chkAll) chkAll.checked = false; refresh(); }
+        if (e.target?.classList.contains('rowchk')) {
+          if (!e.target.checked && chkAll) chkAll.checked = false;
+          refresh();
+        }
       });
       btnEdit?.addEventListener('click', () => {
         const r = getChecked(); if (r.length !== 1) return;
