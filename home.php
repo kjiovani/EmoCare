@@ -1102,6 +1102,48 @@ if (table_exists($mysqli,'quiz_result')) {
       })();
     </script>
   <?php endif; ?>
+
+  <!-- HIDE: Rekapan Bulanan + Riwayat Hasil Kuis -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // 1) Hapus kartu/section "Rekapan Bulanan"
+  const heads = document.querySelectorAll('h1, h2, h3, .title, .section-title');
+  heads.forEach(h => {
+    const t = (h.textContent || '').trim().toLowerCase();
+    if (t.includes('rekapan bulanan')) {
+      // cari container besar terdekat (section/panel/card)
+      let node = h;
+      let removed = false;
+      while (node && node !== document.body) {
+        if (
+          (node.tagName && ['SECTION','ARTICLE'].includes(node.tagName)) ||
+          (node.classList && (node.classList.contains('panel') ||
+                              node.classList.contains('card')  ||
+                              node.classList.contains('recap-card')))
+        ) {
+          node.remove();
+          removed = true;
+          break;
+        }
+        node = node.parentElement;
+      }
+      if (!removed) { // fallback: buang parent 3 tingkat
+        let p = h.parentElement;
+        for (let i=0; i<3 && p && p!==document.body; i++) p = p.parentElement;
+        if (p) p.remove();
+      }
+    }
+  });
+
+  // 2) Hapus tombol/link "Riwayat Hasil Kuis"
+  const els = document.querySelectorAll('a, button');
+  els.forEach(el => {
+    const txt = (el.textContent || '').trim().toLowerCase();
+    if (txt.includes('riwayat hasil kuis')) el.remove();
+  });
+});
+</script>
+
 </body>
 
 </html>

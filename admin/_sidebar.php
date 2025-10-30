@@ -40,6 +40,21 @@ if ($q)
         class="_text">Daftar Admin</span></a>
     <a href="users.php" class="<?= ($active === 'users' ? 'active' : '') ?>"><span class="ico">👥</span><span
         class="_text">Daftar User</span></a>
+    <li>
+  <a href="mood_history.php" class="nav-link">
+    <span class="ico">📜</span>
+    <span class="_text">History Mood</span>
+  </a>
+  <li>
+  <a href="quiz_history.php"
+     class="nav-link <?= basename($_SERVER['PHP_SELF'])==='quiz_history.php'?'active':'' ?>">
+    <span class="ico">📊</span>
+    <span class="_text">History Kuis</span>
+  </a>
+</li>
+
+</li>
+
     <a href="../home.php"><span class="ico">↪</span><span class="_text">Kembali ke Home</span></a>
   </nav>
 </aside>
