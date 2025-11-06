@@ -1,15 +1,25 @@
-/* ==== Global font: Roboto ==== */
-:root {
-  --font-sans: "Roboto", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+/* === EmoCare Font Setup === */
+:root{
+  --font-body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  --font-heading: "Quicksand", var(--font-body);
 }
 
-html,
-body {
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+/* Body & form elements */
+html, body { font-family: var(--font-body) !important; font-weight: 400; }
+button, input, textarea, select { font: inherit; }
+
+/* Headings & judul komponen */
+h1, h2, h3, h4, h5, h6,
+.title, .heading, .section-title, .card-title, .nav-brand, .logo-text {
+  font-family: var(--font-heading) !important;
+  font-weight: 700;
+  letter-spacing: .2px;
 }
+
+/* Opsi: penampilan lebih halus di semua OS */
+html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
 
 /* Pastikan elemen form & tombol ikut font global */
 button,
