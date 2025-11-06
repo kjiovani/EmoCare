@@ -17,41 +17,42 @@ if ($rs = $mysqli->query("SELECT DATABASE()")) {
   $DBNAME = (string)$rs->fetch_row()[0];
   $rs->close();
 }
-function has_col(mysqli $mysqli, string $db, string $table, string $col): bool {
-  $st = $mysqli->prepare("
-    SELECT COUNT(*) FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?
-  ");
+function has_col($mysqli, $db, $table, $col){
+  $st = $mysqli->prepare("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?");
   $st->bind_param('sss', $db, $table, $col);
   $st->execute();
-  $n = (int)$st->get_result()->fetch_column();
+  $c = (int)$st->get_result()->fetch_column();
   $st->close();
-  return $n > 0;
+  return $c > 0;
 }
-$orderCol = 'qa.id';
+$orderCol = null;
 if ($DBNAME) {
-  if (has_col($mysqli, $DBNAME, 'quiz_attempts', 'created_at'))      $orderCol = 'qa.created_at';
-  elseif (has_col($mysqli, $DBNAME, 'quiz_attempts', 'attempt_id'))  $orderCol = 'qa.attempt_id';
+  if (has_col($mysqli, $DBNAME, 'quiz_attempts', 'created_at')) $orderCol = 'qa.created_at';
+  elseif (has_col($mysqli, $DBNAME, 'quiz_attempts', 'attempt_id')) $orderCol = 'qa.attempt_id';
+  elseif (has_col($mysqli, $DBNAME, 'quiz_attempts', 'id')) $orderCol = 'qa.id';
 }
+// fallback aman bila tidak ada kolom di atas
+$ORDER_SQL = $orderCol ? "ORDER BY $orderCol DESC" : "ORDER BY qa.pengguna_id DESC, qa.score DESC";
 
 /* ============ Ambil data ============ */
 $sql = "
   SELECT
-    qa.id,
-    u.nama                                AS user_name,
-    COALESCE(ql.name, qa.category)        AS quiz_name,
-    qa.score                              AS score_pct,
-    qa.label                              AS rec_label,
-    qa.notes                              AS rec_note,
-    DATE(qa.created_at)                   AS tgl
+    p.nama                                  AS user_name,
+    COALESCE(ql.name, qa.category)          AS quiz_name,
+    qa.score                                 AS score_pct,
+    qa.label                                 AS rec_label,
+    qa.notes                                 AS rec_note
   FROM quiz_attempts qa
-  JOIN pengguna  u  ON u.pengguna_id = qa.pengguna_id
+  JOIN pengguna p   ON p.pengguna_id = qa.pengguna_id
   LEFT JOIN quiz_list ql ON ql.slug = qa.category
-  ORDER BY {$orderCol} DESC
+  $ORDER_SQL
   LIMIT {$LIMIT}
 ";
-$res  = $mysqli->query($sql);
-$rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+$st = $mysqli->prepare($sql);
+$st->execute();
+$res  = $st->get_result();
+$rows = $res->fetch_all(MYSQLI_ASSOC);
+$st->close();
 
 ?>
 <link rel="stylesheet" href="../css/admin.css">
@@ -59,8 +60,9 @@ $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
   /* ====== Kartu & Tabel — tema pink glossy ====== */
   .qh-wrap{max-width:1100px;margin:24px auto}
   .qh-card{
-    background:#fff;border-radius:18px;padding:16px;border:1px solid #f6d6e3;
+    background:#fff;border-radius:18px;padding:16px;
     box-shadow:0 10px 30px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.6);
+    border:1px solid #f6d6e3;
   }
   .qh-title{font-weight:800;font-size:1.25rem;margin:0 0 12px;color:#111}
   .qh-sub{margin:-6px 0 12px;color:#888}
@@ -79,31 +81,50 @@ $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
   .qh-table tbody tr:last-child td{border-bottom:0}
   .qh-table tbody tr:hover td{background:#fff9fb}
 
-  /* ====== Score chip yang rapi ====== */
-  .col-no{width:64px}
-  .col-quiz{width:220px}
-  .col-date{width:130px}
-  .col-score{width:210px; text-align:center}
+  /* ====== Score chip yang lebih rapi ====== */
+.col-score{ width:210px; text-align:center }
 
-  .score-pill{
-    display:inline-flex; align-items:center; justify-content:center;
-    padding:6px 8px; border-radius:999px;
-    background:linear-gradient(180deg,#ffe8f1,#ffdcec);
-    border:1px solid #f7c3d8; box-shadow:0 1px 0 rgba(255,255,255,.8) inset;
-  }
-  .score-pill .num{
-    min-width:92px; height:32px; padding:0 10px; border-radius:999px;
-    background:#fff; border:1px solid #f7c3d8; display:flex; align-items:center; justify-content:center;
-    color:#b82668; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:.2px;
-  }
+.score-pill{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 8px;
+  border-radius:999px;
+  background:linear-gradient(180deg,#ffe8f1,#ffdcec);
+  border:1px solid #f7c3d8;
+  box-shadow:0 1px 0 rgba(255,255,255,.8) inset;
+}
+
+.score-pill .num{
+  /* oval di dalam pill: cukup untuk "100.00%" */
+  min-width:92px;               /* lebar konsisten */
+  height:32px;
+  padding:0 10px;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid #f7c3d8;
+  display:flex; align-items:center; justify-content:center;
+  color:#b82668; font-weight:800;
+
+  /* angka tidak goyang */
+  font-variant-numeric: tabular-nums;
+  letter-spacing:.2px;
+}
+
 
   /* Rekomendasi (label + note) */
   .rec{
-    display:block; background:#fff6fa; border:1px solid #f7c3d8; color:#9b2c63;
+    display:block;
+    background:#fff6fa; border:1px solid #f7c3d8; color:#9b2c63;
     padding:8px 12px; border-radius:12px;
   }
   .rec .rlabel{font-weight:800}
   .rec .rnote{display:block;color:#8a5875;margin-top:2px;font-size:.92rem}
+
+  /* Kolom lebar */
+  .col-no{width:64px}
+  .col-quiz{width:220px}
+  .col-score{width:210px}
 </style>
 
 <main class="qh-wrap">
@@ -118,14 +139,13 @@ $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
             <th class="col-no">No</th>
             <th>Nama User</th>
             <th class="col-quiz">Nama Kuis</th>
-            <th class="col-date">Tanggal</th>
             <th class="col-score">Hasil (Persentase)</th>
             <th>Disarankan</th>
           </tr>
         </thead>
         <tbody>
           <?php if (!$rows): ?>
-            <tr><td colspan="6" style="text-align:center;color:#888;padding:18px">Belum ada data.</td></tr>
+            <tr><td colspan="5" style="text-align:center;color:#888;padding:18px">Belum ada data.</td></tr>
           <?php else:
             $no = 1;
             foreach ($rows as $r):
@@ -133,16 +153,17 @@ $rows = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
               $pct  = is_numeric($r['score_pct']) ? number_format((float)$r['score_pct'], 2) : h((string)$r['score_pct']);
               $lbl  = trim((string)$r['rec_label']) ?: '-';
               $note = trim((string)$r['rec_note']);
-              $tgl  = $r['tgl'] ?: '-';
           ?>
           <tr>
             <td><?= $no++ ?></td>
             <td><?= h($r['user_name']) ?></td>
             <td><?= h($quiz) ?></td>
-            <td><?= h($tgl) ?></td>
-            <td class="col-score">
-              <span class="score-pill"><span class="num"><?= $pct ?>%</span></span>
-            </td>
+           <td class="col-score">
+  <span class="score-pill">
+    <span class="num"><?= $pct ?>%</span>
+  </span>
+</td>
+
             <td>
               <span class="rec">
                 <span class="rlabel"><?= h($lbl) ?></span>
